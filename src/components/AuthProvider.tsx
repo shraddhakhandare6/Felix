@@ -20,6 +20,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If environment variables are missing, the keycloak instance will be misconfigured.
+    // We check for the authServerUrl before attempting to initialize.
+    if (!keycloak.authServerUrl) {
+      console.error('Keycloak is not configured. Please provide NEXT_PUBLIC_KEYCLOAK_URL, NEXT_PUBLIC_KEYCLOAK_REALM, and NEXT_PUBLIC_KEYCLOAK_CLIENT_ID environment variables.');
+      setLoading(false);
+      return;
+    }
+
     const initKeycloak = async () => {
       try {
         const authenticated = await keycloak.init({
