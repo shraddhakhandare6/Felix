@@ -36,12 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       try {
         if (!keycloak) {
-          console.error('Keycloak is not configured. Please provide NEXT_PUBLIC_KEYCLOAK_URL, NEXT_PUBLIC_KEYCLOAK_REALM, and NEXT_PUBLIC_KEYCLOAK_CLIENT_ID in your .env file.');
-          return;
-        }
-
-        // Prevents re-initialization
-        if (keycloak.authenticated !== undefined) {
+          console.error('Keycloak instance is not available.');
           return;
         }
         
@@ -105,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     keycloak.onAuthSuccess = () => {
       setIsAuthenticated(true);
       onTokens();
+      router.push('/dashboard');
     };
     keycloak.onAuthRefreshSuccess = onTokens;
     keycloak.onAuthLogout = () => {
