@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Logo } from '@/components/logo';
-import { useAuth } from '@/components/AuthProvider';
+import { useAuth } from '@/context/auth-context';
 import { useEffect } from 'react';
 
 export default function LoginPage() {
