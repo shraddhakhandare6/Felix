@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen w-full bg-background text-foreground">
+    <div className="flex flex-col min-h-screen w-full bg-background dark:bg-gradient-to-br dark:from-[#0f0c29] dark:to-[#24243e] text-foreground">
       <div className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center justify-center text-center space-y-12">
           
