@@ -20,7 +20,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const isPublicPage = (path: string) => {
-    return path === '/' || path.startsWith('/welcome');
+    return path === '/' || path.startsWith('/welcome') || path === '/login';
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -52,14 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             router.push('/dashboard');
         }
       } else {
-        if (!isPublicPage(pathname) && pathname !== '/login') {
+        if (!isPublicPage(pathname)) {
             router.push('/login');
         }
       }
     } catch (error) {
       console.error('Keycloak initialization failed:', error);
       setIsAuthenticated(false);
-      if (!isPublicPage(pathname) && pathname !== '/login') {
+      if (!isPublicPage(pathname)) {
         router.push('/login');
       }
     } finally {
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!keycloak.authServerUrl) {
-      console.error('Keycloak is not configured.');
+      console.error('Keycloak is not configured. Please provide NEXT_PUBLIC_KEYCLOAK_URL, NEXT_PUBLIC_KEYCLOAK_REALM, and NEXT_PUBLIC_KEYCLOAK_CLIENT_ID in your .env file.');
       setLoading(false);
       return;
     }
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return <PageLoader />;
   }
   
-  if (!isAuthenticated && !isPublicPage(pathname) && pathname !== '/login') {
+  if (!isAuthenticated && !isPublicPage(pathname)) {
       return <PageLoader />;
   }
 
