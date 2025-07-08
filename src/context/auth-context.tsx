@@ -33,6 +33,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const initKeycloak = useCallback(async () => {
     try {
+      if (!keycloak) {
+        console.error('Keycloak is not configured. Please provide NEXT_PUBLIC_KEYCLOAK_URL, NEXT_PUBLIC_KEYCLOAK_REALM, and NEXT_PUBLIC_KEYCLOAK_CLIENT_ID in your .env file.');
+        setLoading(false);
+        if (!isPublicPage(pathname)) {
+            router.push('/login');
+        }
+        return;
+      }
+
       const authenticated = await keycloak.init({
         onLoad: 'check-sso',
         silentCheckSsoRedirectUri: typeof window !== 'undefined' ? window.location.origin + '/silent-check-sso.html' : undefined,
@@ -68,17 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, pathname, updateUser]);
 
   useEffect(() => {
-    if (!keycloak.authServerUrl) {
-      console.error('Keycloak is not configured. Please provide NEXT_PUBLIC_KEYCLOAK_URL, NEXT_PUBLIC_KEYCLOAK_REALM, and NEXT_PUBLIC_KEYCLOAK_CLIENT_ID in your .env file.');
-      setLoading(false);
-      return;
-    }
     initKeycloak();
   }, [initKeycloak]);
 
   useEffect(() => {
+    if (!keycloak) return;
+
     const onTokens = () => {
-      if (keycloak.token) {
+      if (keycloak?.token) {
         keycloak.loadUserProfile().then(profile => {
             setUser(profile);
             if (profile.username && profile.email) {
@@ -101,17 +107,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return () => {
-      keycloak.onAuthSuccess = undefined;
-      keycloak.onAuthRefreshSuccess = undefined;
-      keycloak.onAuthLogout = undefined;
+      if (keycloak) {
+        keycloak.onAuthSuccess = undefined;
+        keycloak.onAuthRefreshSuccess = undefined;
+        keycloak.onAuthLogout = undefined;
+      }
     };
   }, [router, updateUser]);
 
 
-  const login = () => keycloak.login();
+  const login = () => keycloak?.login();
   const logout = () => {
     localStorage.removeItem('user');
-    keycloak.logout();
+    keycloak?.logout();
   };
 
   if (loading) {
