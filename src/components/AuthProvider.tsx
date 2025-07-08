@@ -20,8 +20,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If environment variables are missing, the keycloak instance will be misconfigured.
-    // We check for the authServerUrl before attempting to initialize.
+    // keycloak is undefined on the server. We only proceed on the client.
+    if (!keycloak) {
+      setLoading(false);
+      return;
+    }
+
+    // This check is for client-side misconfiguration
     if (!keycloak.authServerUrl) {
       console.error('Keycloak is not configured. Please provide NEXT_PUBLIC_KEYCLOAK_URL, NEXT_PUBLIC_KEYCLOAK_REALM, and NEXT_PUBLIC_KEYCLOAK_CLIENT_ID environment variables.');
       setLoading(false);
@@ -37,7 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
 
         setIsAuthenticated(authenticated);
-        setToken(authenticated ? keycloak.token : null);
+        setToken(authenticated && keycloak.token ? keycloak.token : null);
+
 
         if (authenticated) {
             const userProfile = await keycloak.loadUserProfile();
@@ -60,7 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     keycloak.onTokenExpired = () => {
       keycloak.updateToken(30).then((refreshed) => {
         if (refreshed) {
-          setToken(keycloak.token);
+          setToken(keycloak.token ?? null);
+
         } else {
           console.warn('Token not refreshed, user might be logged out');
         }
@@ -68,10 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const login = () => keycloak.login();
+  const login = () => keycloak?.login();
   const logout = () => {
     localStorage.removeItem('user');
-    keycloak.logout();
+    keycloak?.logout();
   }
 
   if (loading) {
