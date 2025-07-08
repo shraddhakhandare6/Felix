@@ -31,55 +31,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { updateUser } = useUser();
 
-  const initKeycloak = useCallback(async () => {
-    try {
-      if (!keycloak) {
-        console.error('Keycloak is not configured. Please provide NEXT_PUBLIC_KEYCLOAK_URL, NEXT_PUBLIC_KEYCLOAK_REALM, and NEXT_PUBLIC_KEYCLOAK_CLIENT_ID in your .env file.');
-        setLoading(false);
-        if (!isPublicPage(pathname)) {
-            router.push('/login');
+  // This effect runs only once on initial mount to initialize Keycloak
+  useEffect(() => {
+    const init = async () => {
+      try {
+        if (!keycloak) {
+          console.error('Keycloak is not configured. Please provide NEXT_PUBLIC_KEYCLOAK_URL, NEXT_PUBLIC_KEYCLOAK_REALM, and NEXT_PUBLIC_KEYCLOAK_CLIENT_ID in your .env file.');
+          return;
         }
-        return;
-      }
 
-      const authenticated = await keycloak.init({
-        onLoad: 'check-sso',
-        silentCheckSsoRedirectUri: typeof window !== 'undefined' ? window.location.origin + '/silent-check-sso.html' : undefined,
-        pkceMethod: 'S256',
-      });
-
-      setIsAuthenticated(authenticated);
-
-      if (authenticated) {
-        const profile = await keycloak.loadUserProfile();
-        setUser(profile);
-        if (profile.username && profile.email) {
-          updateUser({ username: profile.username, email: profile.email });
+        // Prevents re-initialization
+        if (keycloak.authenticated !== undefined) {
+          return;
         }
         
-        if (pathname === '/login') {
-            router.push('/dashboard');
-        }
-      } else {
-        if (!isPublicPage(pathname)) {
-            router.push('/login');
-        }
-      }
-    } catch (error) {
-      console.error('Keycloak initialization failed:', error);
-      setIsAuthenticated(false);
-      if (!isPublicPage(pathname)) {
-        router.push('/login');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [router, pathname, updateUser]);
+        const authenticated = await keycloak.init({
+          onLoad: 'check-sso',
+          silentCheckSsoRedirectUri: typeof window !== 'undefined' ? window.location.origin + '/silent-check-sso.html' : undefined,
+          pkceMethod: 'S256',
+        });
 
+        setIsAuthenticated(authenticated);
+
+        if (authenticated) {
+          const profile = await keycloak.loadUserProfile();
+          setUser(profile);
+          if (profile.username && profile.email) {
+            updateUser({ username: profile.username, email: profile.email });
+          }
+        }
+      } catch (error) {
+        console.error('Keycloak initialization failed:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once.
+
+
+  // This effect handles routing based on authentication state
   useEffect(() => {
-    initKeycloak();
-  }, [initKeycloak]);
+    if (loading) return; // Don't route until loaded
 
+    if (!isAuthenticated && !isPublicPage(pathname)) {
+      router.push('/login');
+    }
+
+    if (isAuthenticated && pathname === '/login') {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, loading, pathname, router]);
+
+
+  // This effect sets up Keycloak event handlers
   useEffect(() => {
     if (!keycloak) return;
 
