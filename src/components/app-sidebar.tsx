@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -42,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useAuth } from './AuthProvider';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -57,11 +59,12 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { setTheme } = useTheme();
   const { user } = useUser();
+  const { logout } = useAuth();
 
   const isDashboard = pathname === '/dashboard';
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    logout();
   };
 
   return (
@@ -140,11 +143,9 @@ export function AppSidebar() {
               </DropdownMenuPortal>
             </DropdownMenuSub>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-               <Link href="/login" onClick={handleLogout}>
+            <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
-              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

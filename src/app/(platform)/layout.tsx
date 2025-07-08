@@ -1,6 +1,7 @@
 
 'use client';
 
+import { AuthProvider } from '@/components/AuthProvider';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -45,6 +46,7 @@ export default function PlatformLayout({
   };
 
   return (
+  <AuthProvider>
     <UserProvider>
       <PaymentRequestsProvider>
         <AccountProvider>
@@ -117,5 +119,6 @@ export default function PlatformLayout({
         </AccountProvider>
       </PaymentRequestsProvider>
     </UserProvider>
+  </AuthProvider>
   );
 }

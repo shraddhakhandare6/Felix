@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,30 +11,25 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
-import { Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
+import { useEffect } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('user@coe.com');
-  const [showPassword, setShowPassword] = useState(false);
+  const { login, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    // Redirect to dashboard if user is already authenticated
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
 
   const handleLogin = () => {
-    // In a real app, you'd have authentication logic here.
-    // For now, we'll just save to localStorage and redirect.
-    if (email) {
-      const usernamePart = email.split('@')[0];
-      const username = usernamePart.charAt(0).toUpperCase() + usernamePart.slice(1);
-      localStorage.setItem('user', JSON.stringify({ username, email }));
-    }
-    router.push('/dashboard');
+    login();
   };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  }
 
   return (
     <Card className="w-full max-w-sm">
@@ -45,47 +39,17 @@ export default function LoginPage() {
            <CardTitle className="text-3xl">Felix</CardTitle>
         </div>
         <CardDescription>
-          Enter your credentials to access your account.
+          Click the button below to sign in to your account.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input 
-            id="email" 
-            type="email" 
-            placeholder="m@example.com" 
-            required 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Input 
-              id="password" 
-              type={showPassword ? "text" : "password"} 
-              required 
-              defaultValue="password" 
-            />
-            <button 
-              type="button" 
-              onClick={togglePasswordVisibility} 
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col gap-4">
-        <Button className="w-full" onClick={handleLogin}>
+      <CardContent>
+         <Button className="w-full" onClick={handleLogin}>
           Sign In
         </Button>
+      </CardContent>
+       <CardFooter className="flex flex-col gap-4">
          <p className="text-xs text-center text-muted-foreground">
-            Don't have an account? Contact support.
+            You will be redirected to the secure login page.
         </p>
       </CardFooter>
     </Card>
