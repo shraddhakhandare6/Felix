@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,8 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 
 const QR_READER_ID = "qr-reader-view";
 
-// A dedicated component to manage the lifecycle of the QR scanner.
-// This ensures the scanner is initialized only when the component is mounted.
 const QrScanner = ({ 
   onScanSuccess, 
   onScanError 
@@ -26,12 +24,18 @@ const QrScanner = ({
   onScanSuccess: (decodedText: string) => void;
   onScanError: (errorMessage: string) => void;
 }) => {
+  // Use refs to hold the latest callbacks without causing the effect to re-run
+  const onScanSuccessRef = useRef(onScanSuccess);
+  onScanSuccessRef.current = onScanSuccess;
+
+  const onScanErrorRef = useRef(onScanError);
+  onScanErrorRef.current = onScanError;
+
   useEffect(() => {
-    // This effect runs when the component mounts.
     const html5QrCode = new Html5Qrcode(QR_READER_ID, false);
     
     const qrCodeSuccessCallback = (decodedText: string) => {
-      onScanSuccess(decodedText);
+      onScanSuccessRef.current(decodedText);
     };
     
     // We don't need to do anything with minor errors, but the library requires a callback.
@@ -46,7 +50,7 @@ const QrScanner = ({
       qrCodeSuccessCallback,
       qrCodeErrorCallback
     ).catch((err) => {
-      onScanError(String(err));
+      onScanErrorRef.current(String(err));
     });
 
     // Cleanup function to stop scanning when the component unmounts.
@@ -58,7 +62,7 @@ const QrScanner = ({
         });
       }
     };
-  }, [onScanSuccess, onScanError]);
+  }, []); // Empty dependency array ensures this effect runs only once on mount
 
   return <div id={QR_READER_ID} className="w-full rounded-md overflow-hidden bg-secondary min-h-[282px]" />;
 };
