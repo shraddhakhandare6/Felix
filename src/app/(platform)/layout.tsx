@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { FormEvent } from 'react';
@@ -46,7 +47,7 @@ export default function PlatformLayout({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex items-center justify-between p-4 border-b bg-card">
+        <header className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-cyan-400 to-blue-500">
           <SidebarTrigger />
           <div className="flex items-center gap-2 sm:gap-4">
             <form className="hidden sm:flex items-center gap-2" onSubmit={handleSearch}>
