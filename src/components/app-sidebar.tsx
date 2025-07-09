@@ -14,6 +14,7 @@ import {
   Moon,
   Sun,
   User,
+  Shield,
 } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useUser } from '@/context/user-context';
@@ -52,6 +53,7 @@ const menuItems = [
   { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { href: '/payment-requests', label: 'Payment Requests', icon: Send },
   { href: '/contacts', label: 'Contacts', icon: Users },
+  { href: '/admin', label: 'Admin', icon: Shield },
   { href: '/account', label: 'Account', icon: Settings },
 ];
 
