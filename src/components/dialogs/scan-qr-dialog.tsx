@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Html5Qrcode, type Html5QrcodeResult } from 'html5-qrcode';
+import { Html5Qrcode, type Html5QrcodeResult, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -34,7 +33,14 @@ const QrScanner = ({
   onScanErrorRef.current = onScanError;
 
   useEffect(() => {
-    const scanner = new Html5Qrcode(QR_READER_ID, /* verbose= */ false);
+    // By specifying that we only want to scan for QR codes, we can
+    // significantly improve the performance and reliability of the scanner.
+    const scanner = new Html5Qrcode(
+        QR_READER_ID, 
+        { 
+            formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] 
+        }
+    );
     
     const successCallback = (decodedText: string, result: Html5QrcodeResult) => {
       // The success callback can sometimes fire multiple times in quick succession.
@@ -46,9 +52,11 @@ const QrScanner = ({
     };
     
     const errorCallback = (errorMessage: string) => {
-      // We can ignore these as they fire constantly when no QR code is found.
+      // This error callback fires constantly when no QR code is found, 
+      // so we can safely ignore it.
     };
 
+    // This configures the camera feed.
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
     
     scanner.start(
@@ -60,8 +68,7 @@ const QrScanner = ({
       onScanErrorRef.current(String(err));
     });
 
-    // The cleanup function is critical to stop the camera and prevent duplicates,
-    // especially in React's Strict Mode which mounts/unmounts/remounts components.
+    // The cleanup function is critical to stop the camera and prevent duplicates.
     return () => {
       if (scanner && scanner.isScanning) {
         // The stop method is async, but we can't await in cleanup.
