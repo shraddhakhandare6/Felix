@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useContacts } from '@/context/contacts-context';
+import { useToast } from '@/hooks/use-toast';
 
 export function AddContactDialog({ 
     open, 
@@ -25,19 +27,35 @@ export function AddContactDialog({
     initialAddress?: string,
     children?: ReactNode
 }) {
+  const { addContact } = useContacts();
+  const { toast } = useToast();
+  const [name, setName] = useState('');
   const [address, setAddress] = useState(initialAddress);
 
   useEffect(() => {
     if (open) {
       setAddress(initialAddress);
+      setName('');
     }
   }, [open, initialAddress]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Handle form submission logic here
-    console.log('Adding contact...');
-    onOpenChange(false); // Close the dialog on submit
+    if (!name.trim() || !address.trim()) {
+        toast({
+            variant: 'destructive',
+            title: 'Missing Information',
+            description: 'Please enter a name and address.',
+        });
+        return;
+    }
+    
+    addContact({ name, address });
+    toast({
+        title: 'Contact Added',
+        description: `Successfully added ${name} to your contacts.`,
+    });
+    onOpenChange(false);
   };
 
   return (
@@ -56,7 +74,14 @@ export function AddContactDialog({
               <Label htmlFor="name" className="text-right">
                 Name
               </Label>
-              <Input id="name" placeholder="Project or person's name" className="col-span-3" />
+              <Input 
+                id="name" 
+                placeholder="Project or person's name" 
+                className="col-span-3" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="address" className="text-right">
@@ -68,6 +93,7 @@ export function AddContactDialog({
                 className="col-span-3" 
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                required
               />
             </div>
           </div>

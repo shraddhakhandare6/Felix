@@ -23,17 +23,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, PlusCircle } from "lucide-react"
 import { AddContactDialog } from '@/components/dialogs/add-contact-dialog';
 import { ScanQrDialog } from '@/components/dialogs/scan-qr-dialog';
-
-const contacts = [
-    { name: "CoE Desk", address: "coe_desk*felix.com", avatar: "C" },
-    { name: "Project Alpha", address: "G...XYZ", avatar: "A" },
-    { name: "Project Gamma", address: "G...ABC", avatar: "G" },
-    { name: "Individual Member", address: "member_one*felix.com", avatar: "I" },
-]
+import { useContacts } from '@/context/contacts-context';
 
 export default function ContactsPage() {
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [initialAddress, setInitialAddress] = useState('');
+  const { contacts } = useContacts();
 
   const handleScanSuccess = (decodedText: string) => {
     setInitialAddress(decodedText);
@@ -79,8 +74,8 @@ export default function ContactsPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {contacts.map((contact, index) => (
-                        <TableRow key={index}>
+                    {contacts.map((contact) => (
+                        <TableRow key={contact.id}>
                             <TableCell className="font-medium flex items-center gap-3">
                                 <Avatar>
                                     <AvatarImage src={`https://placehold.co/40x40/3F51B5/FFFFFF/png?text=${contact.avatar}`} data-ai-hint="avatar placeholder" />
