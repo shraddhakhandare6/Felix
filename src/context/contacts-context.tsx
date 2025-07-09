@@ -13,6 +13,8 @@ export interface Contact {
 interface ContactsContextType {
   contacts: Contact[];
   addContact: (newContact: { name: string; address: string }) => void;
+  updateContact: (updatedContact: Contact) => void;
+  deleteContact: (id: string) => void;
 }
 
 const initialContacts: Contact[] = [
@@ -36,8 +38,21 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
     setContacts(prev => [contactWithAvatar, ...prev]);
   };
 
+  const updateContact = (updatedContact: Contact) => {
+    setContacts(prev =>
+      prev.map(contact =>
+        contact.id === updatedContact.id ? { ...updatedContact, avatar: updatedContact.name.charAt(0).toUpperCase() } : contact
+      )
+    );
+  };
+
+  const deleteContact = (id: string) => {
+    setContacts(prev => prev.filter(contact => contact.id !== id));
+  };
+
+
   return (
-    <ContactsContext.Provider value={{ contacts, addContact }}>
+    <ContactsContext.Provider value={{ contacts, addContact, updateContact, deleteContact }}>
       {children}
     </ContactsContext.Provider>
   );

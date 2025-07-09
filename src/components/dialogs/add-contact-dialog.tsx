@@ -13,31 +13,40 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useContacts } from '@/context/contacts-context';
+import { useContacts, type Contact } from '@/context/contacts-context';
 import { useToast } from '@/hooks/use-toast';
 
 export function AddContactDialog({ 
     open, 
     onOpenChange, 
     initialAddress = '',
+    contactToEdit,
     children
 }: { 
     open: boolean, 
     onOpenChange: (open: boolean) => void, 
     initialAddress?: string,
+    contactToEdit?: Contact | null,
     children?: ReactNode
 }) {
-  const { addContact } = useContacts();
+  const { addContact, updateContact } = useContacts();
   const { toast } = useToast();
   const [name, setName] = useState('');
-  const [address, setAddress] = useState(initialAddress);
+  const [address, setAddress] = useState('');
+
+  const isEditMode = !!contactToEdit;
 
   useEffect(() => {
     if (open) {
-      setAddress(initialAddress);
-      setName('');
+      if (isEditMode && contactToEdit) {
+        setName(contactToEdit.name);
+        setAddress(contactToEdit.address);
+      } else {
+        setName('');
+        setAddress(initialAddress);
+      }
     }
-  }, [open, initialAddress]);
+  }, [open, contactToEdit, initialAddress, isEditMode]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,12 +58,21 @@ export function AddContactDialog({
         });
         return;
     }
+
+    if (isEditMode && contactToEdit) {
+      updateContact({ ...contactToEdit, name, address });
+      toast({
+          title: 'Contact Updated',
+          description: `Successfully updated ${name}.`,
+      });
+    } else {
+      addContact({ name, address });
+      toast({
+          title: 'Contact Added',
+          description: `Successfully added ${name} to your contacts.`,
+      });
+    }
     
-    addContact({ name, address });
-    toast({
-        title: 'Contact Added',
-        description: `Successfully added ${name} to your contacts.`,
-    });
     onOpenChange(false);
   };
 
@@ -64,9 +82,11 @@ export function AddContactDialog({
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Add New Contact</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Contact' : 'Add New Contact'}</DialogTitle>
             <DialogDescription>
-              Enter the details for your new contact below. Click save when you're done.
+              {isEditMode
+                ? "Update the details for your contact below."
+                : "Enter the details for your new contact below. Click save when you're done."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -98,7 +118,7 @@ export function AddContactDialog({
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Save Contact</Button>
+            <Button type="submit">{isEditMode ? 'Save Changes' : 'Save Contact'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

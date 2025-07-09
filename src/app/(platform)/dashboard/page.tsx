@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useKeycloak } from '@react-keycloak/web';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -33,6 +34,7 @@ import { usePaymentRequests } from '@/context/payment-requests-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
+import { PageLoader } from '@/components/page-loader';
 
 const transactions = [
   {
@@ -61,9 +63,10 @@ const transactions = [
   },
 ];
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const { keycloak, initialized } = useKeycloak();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { logout } = useAuth();
 
   const { incomingRequests, payRequest, declineRequest } = usePaymentRequests();
@@ -73,6 +76,13 @@ export default function DashboardPage() {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
+
+  useEffect(() => {
+    const recipientParam = searchParams.get('recipient');
+    if (recipientParam) {
+      setRecipient(decodeURIComponent(recipientParam));
+    }
+  }, [searchParams]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -241,5 +251,13 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }

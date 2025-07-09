@@ -1,3 +1,7 @@
+'use client';
+
+import React, { useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -16,6 +20,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { BadgeDollarSign, CreditCard } from "lucide-react"
+import { PageLoader } from '@/components/page-loader';
 
 const assets = [
   { name: "BlueDollars", code: "BD", balance: "10,430.50", icon: <BadgeDollarSign className="w-6 h-6 text-primary" /> },
@@ -65,11 +70,21 @@ const TransactionTable = ({ transactions }: { transactions: Transaction[] }) => 
   );
 };
 
+function WalletPageContent() {
+  const searchParams = useSearchParams();
+  const nameFilter = searchParams.get('name');
 
-export default function WalletPage() {
-  const sentTransactions = allTransactions.filter(tx => tx.type === 'Sent');
-  const receivedTransactions = allTransactions.filter(tx => tx.type === 'Received' || tx.type === 'Issued');
-  const tradeTransactions = allTransactions.filter(tx => tx.type === 'Offer Match');
+  const filteredTransactions = useMemo(() => {
+    if (!nameFilter) {
+      return allTransactions;
+    }
+    const lowerCaseFilter = nameFilter.toLowerCase();
+    return allTransactions.filter(tx => tx.details.toLowerCase().includes(lowerCaseFilter));
+  }, [nameFilter]);
+
+  const sentTransactions = filteredTransactions.filter(tx => tx.type === 'Sent');
+  const receivedTransactions = filteredTransactions.filter(tx => tx.type === 'Received' || tx.type === 'Issued');
+  const tradeTransactions = filteredTransactions.filter(tx => tx.type === 'Offer Match');
 
   return (
     <div className="space-y-6">
@@ -92,7 +107,12 @@ export default function WalletPage() {
       <Card>
         <CardHeader>
           <CardTitle>Transaction History</CardTitle>
-          <CardDescription>A complete log of your account activity.</CardDescription>
+          <CardDescription>
+            {nameFilter
+              ? `Displaying transactions involving "${nameFilter}"`
+              : 'A complete log of your account activity.'
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="all">
@@ -103,7 +123,7 @@ export default function WalletPage() {
               <TabsTrigger value="trades">Trades</TabsTrigger>
             </TabsList>
             <TabsContent value="all" className="mt-4">
-              <TransactionTable transactions={allTransactions} />
+              <TransactionTable transactions={filteredTransactions} />
             </TabsContent>
             <TabsContent value="sent" className="mt-4">
               <TransactionTable transactions={sentTransactions} />
@@ -118,5 +138,13 @@ export default function WalletPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function WalletPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <WalletPageContent />
+    </Suspense>
   )
 }
