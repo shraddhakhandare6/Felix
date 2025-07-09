@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, type Html5QrcodeResult, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,8 +24,10 @@ const QrScanner = ({
   onScanSuccess: (decodedText: string) => void;
   onScanError: (errorMessage: string) => void;
 }) => {
-  // This ref pattern is essential to avoid re-running the effect
-  // when the parent component re-renders and creates new function instances for the callbacks.
+  // Use a ref to hold the scanner instance to prevent re-initialization on re-renders.
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  
+  // Use refs for callbacks to ensure the latest functions are used without re-triggering the effect.
   const onScanSuccessRef = useRef(onScanSuccess);
   onScanSuccessRef.current = onScanSuccess;
 
@@ -33,35 +35,37 @@ const QrScanner = ({
   onScanErrorRef.current = onScanError;
 
   useEffect(() => {
-    // The scanner instance is created here and will be cleaned up on unmount.
-    const scanner = new Html5Qrcode(
-        QR_READER_ID, 
-        { 
-            formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] 
-        }
-    );
+    // This effect should only run once on component mount.
+    // The empty dependency array [] ensures this.
+    
+    // Here is the key optimization: we specify that the scanner should ONLY look for QR_CODE.
+    // This makes it significantly faster and more reliable.
+  const scanner = new Html5Qrcode(QR_READER_ID, {
+  formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+  verbose: false // or true if you want logs
+});
+
+    scannerRef.current = scanner;
     
     const successCallback = (decodedText: string, result: Html5QrcodeResult) => {
-      // The success callback can sometimes fire multiple times in quick succession.
-      // We stop the scanner immediately to prevent this, and then call the parent callback.
+      // Stop the scanner immediately on success to prevent multiple callbacks.
       if (scanner.isScanning) {
         scanner.stop().then(() => {
             onScanSuccessRef.current(decodedText);
         }).catch((err) => {
             console.error("Failed to stop scanner after success", err);
-            // still call the success callback
             onScanSuccessRef.current(decodedText);
         });
       }
     };
     
     const errorCallback = (errorMessage: string) => {
-      // This error callback fires constantly when no QR code is found, so we can safely ignore it.
-      // The start method's catch block will handle fatal errors like camera permissions.
+      // This callback fires constantly when no QR code is in view. We can ignore these messages.
     };
 
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
     
+    // Start scanning.
     scanner.start(
       { facingMode: "environment" },
       config,
@@ -71,17 +75,14 @@ const QrScanner = ({
       onScanErrorRef.current(String(err));
     });
 
-    // The cleanup function is critical to stop the camera and prevent duplicates.
+    // The cleanup function is critical to stop the camera when the component unmounts.
     return () => {
-      // We need to check if the scanner is still scanning before trying to stop it.
-      // This can happen if the component unmounts for other reasons.
-      if (scanner && scanner.isScanning) {
-        scanner.stop().catch(error => {
-          console.warn("QR scanner failed to stop during cleanup.", error);
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(error => {
+          console.warn("QR scanner failed to stop gracefully during cleanup.", error);
         });
       }
     };
-  // The empty dependency array is crucial to ensure this effect runs only once.
   }, []); 
 
   return <div id={QR_READER_ID} className="w-full aspect-square rounded-md overflow-hidden bg-secondary" />;
@@ -94,7 +95,7 @@ export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: s
 
   const handleSuccess = (decodedText: string) => {
     onScanSuccess(decodedText);
-    setOpen(false); // Close the dialog on successful scan
+    setOpen(false);
   };
 
   const handleError = (errorMessage: string) => {
@@ -104,7 +105,7 @@ export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: s
       title: 'Camera Error',
       description: 'Could not access the camera. Please check permissions and try again.',
     });
-    setOpen(false); // Close the dialog on error
+    setOpen(false);
   };
   
   return (
