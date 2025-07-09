@@ -84,7 +84,7 @@ export function AssetCreationForm() {
                 <FormItem>
                   <FormLabel>Asset Code</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., GOLD, BTC" {...field} />
+                    <Input placeholder="e.g., BD, BTC" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
