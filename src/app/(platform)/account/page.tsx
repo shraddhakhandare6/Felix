@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -42,6 +41,7 @@ const profileFormSchema = z.object({
 })
 
 export default function AccountPage() {
+  const [activeTab, setActiveTab] = useState("profile");
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [importKey, setImportKey] = useState("");
   
@@ -68,8 +68,11 @@ export default function AccountPage() {
 
   const handleImportSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    importAccount(importKey);
-    setImportKey('');
+    const success = importAccount(importKey);
+    if (success) {
+      setImportKey('');
+      setActiveTab('export');
+    }
   };
 
   const handleCopy = (text: string, fieldName: string) => {
@@ -137,7 +140,7 @@ export default function AccountPage() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Account Management</h1>
 
-      <Tabs defaultValue="profile">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="export">Export Account</TabsTrigger>

@@ -13,7 +13,7 @@ interface Account {
 
 interface AccountContextType {
   account: Account;
-  importAccount: (secretKey: string) => void;
+  importAccount: (secretKey: string) => boolean;
 }
 
 const initialAccount: Account = {
@@ -55,14 +55,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   }, [user.email]);
 
-  const importAccount = (secretKey: string) => {
+  const importAccount = (secretKey: string): boolean => {
     if (!user.email) {
         toast({
             variant: "destructive",
             title: "User not identified",
             description: "Cannot import an account without a logged-in user.",
         });
-        return;
+        return false;
     }
 
     // Basic validation for a Stellar secret key
@@ -83,12 +83,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         title: "Account Imported",
         description: "Your Stellar account has been successfully imported.",
       });
+      return true;
     } else {
        toast({
         variant: "destructive",
         title: "Invalid Secret Key",
         description: "Please enter a valid Stellar secret key (it should start with 'S' and be 56 characters long).",
       });
+      return false;
     }
   };
 
