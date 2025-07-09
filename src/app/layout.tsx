@@ -10,6 +10,7 @@ import { KeycloakProvider } from '@/components/keycloak-provider';
 import { ContactsProvider } from '@/context/contacts-context';
 import { EntityProvider } from '@/context/entity-context';
 import { PlatformUsersProvider } from '@/context/platform-users-context';
+import { AssetProvider } from '@/context/asset-context';
 
 export const metadata: Metadata = {
   title: 'Felix - Blockchain Service & Wallet Platform',
@@ -42,9 +43,11 @@ export default function RootLayout({
                 <ContactsProvider>
                   <EntityProvider>
                     <PlatformUsersProvider>
-                      <AuthProvider>
-                        {children}
-                      </AuthProvider>
+                      <AssetProvider>
+                        <AuthProvider>
+                          {children}
+                        </AuthProvider>
+                      </AssetProvider>
                     </PlatformUsersProvider>
                   </EntityProvider>
                 </ContactsProvider>
