@@ -123,10 +123,9 @@ function DashboardPageContent() {
     <div className="container mx-auto p-4 space-y-6">
       {keycloak?.authenticated && (
         <div className="flex justify-between items-center mb-4">
-          <div>
-            <p className="text-muted-foreground text-sm">Logged in as:</p>
-            <p className="font-medium">{keycloak.tokenParsed?.preferred_username}</p>
-          </div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            Welcome, {keycloak.tokenParsed?.preferred_username}
+          </h2>
           <Button variant="destructive" onClick={logout}>
             Logout
           </Button>
