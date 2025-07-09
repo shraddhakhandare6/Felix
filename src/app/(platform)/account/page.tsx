@@ -99,6 +99,39 @@ export default function AccountPage() {
     );
   };
 
+  const handleDownloadBackup = () => {
+    if (!account.publicKey || !account.secretKey) {
+        toast({
+            variant: 'destructive',
+            title: 'Download Failed',
+            description: 'Account data is not available to download.',
+        });
+        return;
+    }
+
+    const backupData = {
+        publicKey: account.publicKey,
+        secretKey: account.secretKey,
+        note: "This file contains your secret key. Keep it safe and do not share it.",
+        exportDate: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `felix-account-backup-${account.publicKey.substring(0, 8)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+        title: 'Backup Downloading',
+        description: 'Your account backup file has started downloading.',
+    });
+  };
+
 
   return (
     <div className="space-y-6">
@@ -221,7 +254,7 @@ export default function AccountPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button variant="secondary">Download Backup</Button>
+                    <Button variant="secondary" onClick={handleDownloadBackup}>Download Backup</Button>
                 </CardFooter>
             </Card>
         </TabsContent>
