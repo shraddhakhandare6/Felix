@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface Asset {
   id: string;
@@ -10,29 +10,49 @@ export interface Asset {
 
 interface AssetContextType {
   assets: Asset[];
-  addAsset: (newAsset: Omit<Asset, 'id'>) => void;
+  refreshAssets: () => Promise<void>;
 }
-
-const initialAssets: Asset[] = [
-    { id: '1', assetCode: "USD" },
-    { id: '2', assetCode: "EUR" },
-];
 
 const AssetContext = createContext<AssetContextType | undefined>(undefined);
 
 export function AssetProvider({ children }: { children: ReactNode }) {
-  const [assets, setAssets] = useState<Asset[]>(initialAssets);
+  const [assets, setAssets] = useState<Asset[]>([]);
 
-  const addAsset = (newAsset: Omit<Asset, 'id'>) => {
-    const assetWithId: Asset = {
-      id: `asset_${Date.now()}`,
-      assetCode: newAsset.assetCode.toUpperCase(),
-    };
-    setAssets(prev => [assetWithId, ...prev]);
-  };
+  const refreshAssets = useCallback(async () => {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      console.error('API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.meta?.message || 'Failed to fetch assets.');
+      }
+
+      if (result.data && Array.isArray(result.data)) {
+        const fetchedAssets = result.data
+          .map((asset: any) => ({
+            id: asset.id || asset.asset_code || asset.assetCode,
+            assetCode: asset.asset_code || asset.assetCode,
+          }))
+          .filter((asset: Asset) => asset.assetCode);
+        setAssets(fetchedAssets);
+      }
+    } catch (error) {
+      console.error('Failed to fetch assets:', error);
+      setAssets([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshAssets();
+  }, [refreshAssets]);
 
   return (
-    <AssetContext.Provider value={{ assets, addAsset }}>
+    <AssetContext.Provider value={{ assets, refreshAssets }}>
       {children}
     </AssetContext.Provider>
   );

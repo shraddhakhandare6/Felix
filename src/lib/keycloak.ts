@@ -8,13 +8,13 @@ type KeycloakConfig = {
 };
 
 // Validate environment variables
-function getKeycloakConfig(): KeycloakConfig {
+function getKeycloakConfig(): KeycloakConfig | null {
   const url = process.env.NEXT_PUBLIC_KEYCLOAK_URL;
   const realm = process.env.NEXT_PUBLIC_KEYCLOAK_REALM;
   const clientId = process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID;
 
   if (!url || !realm || !clientId) {
-    throw new Error('Keycloak configuration is missing. Please check your environment variables.');
+    return null;
   }
 
   return {
@@ -24,6 +24,10 @@ function getKeycloakConfig(): KeycloakConfig {
   };
 }
 
-const keycloak = new Keycloak(getKeycloakConfig());
+// Conditionally instantiate Keycloak to prevent crashes when config is missing.
+// The AuthProvider will handle the unconfigured state.
+const config = getKeycloakConfig();
+const keycloak = config ? new Keycloak(config) : {} as Keycloak;
+
 
 export default keycloak;

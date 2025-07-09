@@ -77,11 +77,11 @@ const QrScanner = ({
 
     // The cleanup function is critical to stop the camera when the component unmounts.
     return () => {
-      // The `stop()` method should be called unconditionally to ensure the camera is released.
-      // We catch errors because the library may throw an error if `stop()` is called when not scanning.
-      scannerRef.current?.stop().catch(error => {
-        console.warn("QR scanner failed to stop gracefully during cleanup. This may be expected in React Strict Mode.", error);
-      });
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(error => {
+          console.warn("QR scanner failed to stop gracefully during cleanup.", error);
+        });
+      }
     };
   }, []); 
 

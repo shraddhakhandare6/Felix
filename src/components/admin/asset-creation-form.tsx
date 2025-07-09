@@ -31,7 +31,7 @@ const formSchema = z.object({
 
 export function AssetCreationForm() {
   const { toast } = useToast();
-  const { addAsset } = useAssets();
+  const { refreshAssets } = useAssets();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,27 +41,52 @@ export function AssetCreationForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Simulate the API call
-    console.log('Simulating POST /api/v1/asset/create with payload:', {
-      'asset-code': values.assetCode,
-    });
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      toast({
+        variant: 'destructive',
+        title: 'Configuration Error',
+        description: 'The API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.',
+      });
+      return;
+    }
 
     try {
-        // This is where you would typically make the fetch request.
-        // Since there is no backend, we will just simulate success.
-        
-        addAsset({ assetCode: values.assetCode });
-        toast({
-          title: 'Asset Created',
-          description: `Asset ${values.assetCode} has been successfully created.`,
-        });
-        form.reset();
+      const response = await fetch(`${apiBaseUrl}/api/v1/assets/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          asset_code: values.assetCode,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.meta?.message || 'Failed to create asset');
+      }
+
+      const newAsset = result.data?.[0];
+      if (!newAsset?.assetCode) {
+        throw new Error('API did not return created asset details.');
+      }
+      
+      toast({
+        title: 'Asset Created',
+        description: `Asset ${newAsset.assetCode} has been successfully created.`,
+      });
+      
+      refreshAssets();
+      form.reset();
+
     } catch (error) {
         console.error("Failed to create asset:", error);
         toast({
           variant: 'destructive',
           title: 'Creation Failed',
-          description: 'Could not create the asset.',
+          description: error instanceof Error ? error.message : 'An unknown error occurred.',
         });
     }
   }
