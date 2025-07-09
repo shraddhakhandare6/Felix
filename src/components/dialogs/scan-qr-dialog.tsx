@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, type Html5QrcodeResult } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,7 +25,8 @@ const QrScanner = ({
   onScanSuccess: (decodedText: string) => void;
   onScanError: (errorMessage: string) => void;
 }) => {
-  // Use refs to hold the latest callbacks without causing the effect to re-run
+  // This ref pattern for callbacks is essential to avoid re-running the effect
+  // when the parent component re-renders and creates new function instances.
   const onScanSuccessRef = useRef(onScanSuccess);
   onScanSuccessRef.current = onScanSuccess;
 
@@ -33,45 +34,45 @@ const QrScanner = ({
   onScanErrorRef.current = onScanError;
 
   useEffect(() => {
-    // This instance needs to be defined in the effect scope to be accessible in the cleanup function.
-    const html5QrCode = new Html5Qrcode(QR_READER_ID, false);
+    const scanner = new Html5Qrcode(QR_READER_ID, /* verbose= */ false);
     
-    const qrCodeSuccessCallback = (decodedText: string) => {
+    const successCallback = (decodedText: string, result: Html5QrcodeResult) => {
+      // The success callback can sometimes fire multiple times in quick succession.
+      // We stop the scanner immediately to prevent this.
+      if (scanner.isScanning) {
+        scanner.stop();
+      }
       onScanSuccessRef.current(decodedText);
     };
     
-    // We don't need to do anything with minor errors, but the library requires a callback.
-    const qrCodeErrorCallback = (errorMessage: string) => { };
+    const errorCallback = (errorMessage: string) => {
+      // We can ignore these as they fire constantly when no QR code is found.
+    };
 
-    // Enforce a square scanning region.
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-    // Start scanning
-    html5QrCode.start(
+    
+    scanner.start(
       { facingMode: "environment" },
       config,
-      qrCodeSuccessCallback,
-      qrCodeErrorCallback
+      successCallback,
+      errorCallback
     ).catch((err) => {
-      // This catches critical errors like camera permission denial
       onScanErrorRef.current(String(err));
     });
 
-    // This cleanup function is CRITICAL. It runs when the component unmounts.
-    // In React's Strict Mode (used in development), components mount, unmount, and remount.
-    // This cleanup ensures the first scanner instance is destroyed before the second one is created.
+    // The cleanup function is critical to stop the camera and prevent duplicates,
+    // especially in React's Strict Mode which mounts/unmounts/remounts components.
     return () => {
-      if (html5QrCode.isScanning) {
-        html5QrCode.stop().catch(err => {
-          // This can fail if the scanner is already stopped or in a bad state.
-          // It's safe to ignore, as our goal is just to ensure it's not running.
-          console.error("Failed to stop the QR scanner on cleanup.", err);
+      if (scanner && scanner.isScanning) {
+        // The stop method is async, but we can't await in cleanup.
+        // We fire and forget, and catch any errors to prevent crashes.
+        scanner.stop().catch(error => {
+          console.warn("QR scanner failed to stop during cleanup.", error);
         });
       }
     };
-  }, []); // The empty dependency array ensures this effect runs only on mount/unmount.
+  }, []); // The empty dependency array is crucial to ensure this effect runs only once.
 
-  // Use aspect-square to force a square shape for the video container
   return <div id={QR_READER_ID} className="w-full aspect-square rounded-md overflow-hidden bg-secondary" />;
 };
 
