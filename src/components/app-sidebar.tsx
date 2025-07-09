@@ -63,10 +63,6 @@ export function AppSidebar() {
 
   const isDashboard = pathname === '/dashboard';
 
-  const handleLogout = () => {
-    logout();
-  };
-
   return (
     <Sidebar>
       <SidebarHeader>
@@ -143,7 +139,7 @@ export function AppSidebar() {
               </DropdownMenuPortal>
             </DropdownMenuSub>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
             </DropdownMenuItem>
