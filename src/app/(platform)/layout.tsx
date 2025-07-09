@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { FormEvent } from 'react';
@@ -17,6 +16,8 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
 
@@ -69,6 +70,9 @@ export default function PlatformLayout({
                 </Button>
               </SheetTrigger>
               <SheetContent side="top" className="p-0">
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Search</SheetTitle>
+                </SheetHeader>
                 <form className="flex items-center gap-2 p-4" onSubmit={handleSearch}>
                     <Search className="h-5 w-5 text-muted-foreground" />
                     <Input
