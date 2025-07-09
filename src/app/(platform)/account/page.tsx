@@ -30,6 +30,7 @@ import {
 import { useUser } from '@/context/user-context';
 import { useToast } from '@/hooks/use-toast';
 import { useAccount } from '@/context/account-context';
+import { Copy } from 'lucide-react';
 
 const profileFormSchema = z.object({
   username: z.string().min(2, {
@@ -69,6 +70,33 @@ export default function AccountPage() {
     event.preventDefault();
     importAccount(importKey);
     setImportKey('');
+  };
+
+  const handleCopy = (text: string, fieldName: string) => {
+    if (!navigator.clipboard) {
+      toast({
+        variant: 'destructive',
+        title: 'Copy Failed',
+        description: 'Clipboard API is not available in this browser.',
+      });
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => {
+        toast({
+          title: `${fieldName} Copied`,
+          description: `Your ${fieldName.toLowerCase()} has been copied to the clipboard.`,
+        });
+      },
+      (err) => {
+        toast({
+          variant: 'destructive',
+          title: 'Copy Failed',
+          description: `Could not copy ${fieldName.toLowerCase()}.`,
+        });
+        console.error('Failed to copy text: ', err);
+      }
+    );
   };
 
 
@@ -137,7 +165,19 @@ export default function AccountPage() {
                     <div className="space-y-4">
                         <div>
                             <Label htmlFor="publicKey">Public Key</Label>
-                            <Input id="publicKey" readOnly value={account.publicKey} />
+                            <div className="relative">
+                                <Input id="publicKey" readOnly value={account.publicKey} className="pr-10" />
+                                <Button 
+                                    type="button" 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                                    onClick={() => handleCopy(account.publicKey, 'Public Key')}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                    <span className="sr-only">Copy Public Key</span>
+                                </Button>
+                            </div>
                             <p className="text-xs text-muted-foreground mt-1">Share this to receive funds.</p>
                         </div>
                         <div className="space-y-2">
@@ -147,12 +187,25 @@ export default function AccountPage() {
                                     {showSecretKey ? 'Hide' : 'Show'}
                                 </Button>
                             </div>
-                             <Input 
-                                id="secretKeyInput"
-                                readOnly 
-                                value={showSecretKey ? account.secretKey : "S" + "•".repeat(55)} 
-                                type={showSecretKey ? "text" : "password"} 
-                             />
+                             <div className="relative">
+                                <Input 
+                                    id="secretKeyInput"
+                                    readOnly 
+                                    value={showSecretKey ? account.secretKey : "S" + "•".repeat(55)} 
+                                    type={showSecretKey ? "text" : "password"} 
+                                    className="pr-10"
+                                />
+                                <Button 
+                                    type="button" 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                                    onClick={() => handleCopy(account.secretKey, 'Secret Key')}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                    <span className="sr-only">Copy Secret Key</span>
+                                </Button>
+                            </div>
                             <p className="text-xs text-muted-foreground mt-1"><strong>Warning:</strong> Never share your secret key.</p>
                         </div>
                     </div>
