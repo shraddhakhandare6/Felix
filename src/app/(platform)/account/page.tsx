@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -30,6 +29,7 @@ import {
 import { useUser } from '@/context/user-context';
 import { useToast } from '@/hooks/use-toast';
 import { useAccount } from '@/context/account-context';
+import { Copy } from 'lucide-react';
 
 const profileFormSchema = z.object({
   username: z.string().min(2, {
@@ -41,6 +41,7 @@ const profileFormSchema = z.object({
 })
 
 export default function AccountPage() {
+  const [activeTab, setActiveTab] = useState("profile");
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [importKey, setImportKey] = useState("");
   
@@ -67,8 +68,71 @@ export default function AccountPage() {
 
   const handleImportSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    importAccount(importKey);
-    setImportKey('');
+    const success = importAccount(importKey);
+    if (success) {
+      setImportKey('');
+      setActiveTab('export');
+    }
+  };
+
+  const handleCopy = (text: string, fieldName: string) => {
+    if (!navigator.clipboard) {
+      toast({
+        variant: 'destructive',
+        title: 'Copy Failed',
+        description: 'Clipboard API is not available in this browser.',
+      });
+      return;
+    }
+    navigator.clipboard.writeText(text).then(
+      () => {
+        toast({
+          title: `${fieldName} Copied`,
+          description: `Your ${fieldName.toLowerCase()} has been copied to the clipboard.`,
+        });
+      },
+      (err) => {
+        toast({
+          variant: 'destructive',
+          title: 'Copy Failed',
+          description: `Could not copy ${fieldName.toLowerCase()}.`,
+        });
+        console.error('Failed to copy text: ', err);
+      }
+    );
+  };
+
+  const handleDownloadBackup = () => {
+    if (!account.publicKey || !account.secretKey) {
+        toast({
+            variant: 'destructive',
+            title: 'Download Failed',
+            description: 'Account data is not available to download.',
+        });
+        return;
+    }
+
+    const backupData = {
+        publicKey: account.publicKey,
+        secretKey: account.secretKey,
+        note: "This file contains your secret key. Keep it safe and do not share it.",
+        exportDate: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `felix-account-backup-${account.publicKey.substring(0, 8)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+        title: 'Backup Downloading',
+        description: 'Your account backup file has started downloading.',
+    });
   };
 
 
@@ -76,7 +140,7 @@ export default function AccountPage() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Account Management</h1>
 
-      <Tabs defaultValue="profile">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="export">Export Account</TabsTrigger>
@@ -137,7 +201,19 @@ export default function AccountPage() {
                     <div className="space-y-4">
                         <div>
                             <Label htmlFor="publicKey">Public Key</Label>
-                            <Input id="publicKey" readOnly value={account.publicKey} />
+                            <div className="relative">
+                                <Input id="publicKey" readOnly value={account.publicKey} className="pr-10" />
+                                <Button 
+                                    type="button" 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                                    onClick={() => handleCopy(account.publicKey, 'Public Key')}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                    <span className="sr-only">Copy Public Key</span>
+                                </Button>
+                            </div>
                             <p className="text-xs text-muted-foreground mt-1">Share this to receive funds.</p>
                         </div>
                         <div className="space-y-2">
@@ -147,12 +223,25 @@ export default function AccountPage() {
                                     {showSecretKey ? 'Hide' : 'Show'}
                                 </Button>
                             </div>
-                             <Input 
-                                id="secretKeyInput"
-                                readOnly 
-                                value={showSecretKey ? account.secretKey : "S" + "•".repeat(55)} 
-                                type={showSecretKey ? "text" : "password"} 
-                             />
+                             <div className="relative">
+                                <Input 
+                                    id="secretKeyInput"
+                                    readOnly 
+                                    value={showSecretKey ? account.secretKey : "S" + "•".repeat(55)} 
+                                    type={showSecretKey ? "text" : "password"} 
+                                    className="pr-10"
+                                />
+                                <Button 
+                                    type="button" 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                                    onClick={() => handleCopy(account.secretKey, 'Secret Key')}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                    <span className="sr-only">Copy Secret Key</span>
+                                </Button>
+                            </div>
                             <p className="text-xs text-muted-foreground mt-1"><strong>Warning:</strong> Never share your secret key.</p>
                         </div>
                     </div>
@@ -168,7 +257,7 @@ export default function AccountPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button variant="secondary">Download Backup</Button>
+                    <Button variant="secondary" onClick={handleDownloadBackup}>Download Backup</Button>
                 </CardFooter>
             </Card>
         </TabsContent>

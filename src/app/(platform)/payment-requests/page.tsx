@@ -19,9 +19,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle, FileUp } from "lucide-react"
 import { CreateRequestDialog } from "@/components/dialogs/create-request-dialog";
 import { usePaymentRequests } from "@/context/payment-requests-context";
+import { BulkUploadDialog } from "@/components/dialogs/bulk-upload-dialog";
 
 export default function PaymentRequestsPage() {
   const { incomingRequests, outgoingRequests, payRequest, declineRequest } = usePaymentRequests();
@@ -31,9 +31,7 @@ export default function PaymentRequestsPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Payment Requests</h1>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            <Button variant="outline" className="justify-center">
-                <FileUp className="mr-2 h-4 w-4" /> Bulk Upload Requests
-            </Button>
+            <BulkUploadDialog />
             <CreateRequestDialog />
         </div>
       </div>

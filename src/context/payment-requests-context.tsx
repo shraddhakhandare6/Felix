@@ -43,7 +43,7 @@ export function PaymentRequestsProvider({ children }: { children: ReactNode }) {
     const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     
     const requestWithDefaults: Request = { 
-      id: `out_${Date.now()}`,
+      id: `out_${Date.now()}_${Math.random()}`,
       ...newRequest, 
       status: 'Pending' as const, 
       date 

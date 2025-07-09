@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -13,6 +14,7 @@ import {
   Moon,
   Sun,
   User,
+  Shield,
 } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useUser } from '@/context/user-context';
@@ -42,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -50,6 +53,7 @@ const menuItems = [
   { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { href: '/payment-requests', label: 'Payment Requests', icon: Send },
   { href: '/contacts', label: 'Contacts', icon: Users },
+  { href: '/admin', label: 'Admin', icon: Shield },
   { href: '/account', label: 'Account', icon: Settings },
 ];
 
@@ -57,12 +61,9 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { setTheme } = useTheme();
   const { user } = useUser();
+  const { logout } = useAuth();
 
   const isDashboard = pathname === '/dashboard';
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-  };
 
   return (
     <Sidebar>
@@ -140,11 +141,9 @@ export function AppSidebar() {
               </DropdownMenuPortal>
             </DropdownMenuSub>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-               <Link href="/login" onClick={handleLogout}>
+            <DropdownMenuItem onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
-              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -13,7 +13,7 @@ interface Account {
 
 interface AccountContextType {
   account: Account;
-  importAccount: (secretKey: string) => void;
+  importAccount: (secretKey: string) => boolean;
 }
 
 const initialAccount: Account = {
@@ -23,6 +23,16 @@ const initialAccount: Account = {
 };
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
+
+// Helper function to generate a random Stellar-like key.
+const generateRandomKey = (prefix: 'G' | 'S'): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 55; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return prefix + result;
+};
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account>(initialAccount);
@@ -46,8 +56,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     } else {
         // In a real app, you would use a proper SDK to generate a keypair.
         // For this prototype, we'll generate a new mock keypair.
-        const newPublicKey = 'G' + [...Array(55)].map(() => (~~(Math.random() * 36)).toString(36).toUpperCase()).join('');
-        const newSecretKey = 'S' + [...Array(55)].map(() => (~~(Math.random() * 36)).toString(36).toUpperCase()).join('');
+        const newPublicKey = generateRandomKey('G');
+        const newSecretKey = generateRandomKey('S');
         const newUserAccount = { publicKey: newPublicKey, secretKey: newSecretKey };
         
         setAccount(newUserAccount);
@@ -55,21 +65,21 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   }, [user.email]);
 
-  const importAccount = (secretKey: string) => {
+  const importAccount = (secretKey: string): boolean => {
     if (!user.email) {
         toast({
             variant: "destructive",
             title: "User not identified",
             description: "Cannot import an account without a logged-in user.",
         });
-        return;
+        return false;
     }
 
     // Basic validation for a Stellar secret key
     if (secretKey && secretKey.startsWith('S') && secretKey.length === 56) {
       // In a real app, you would derive the public key from the secret key.
       // For this prototype, we'll generate a new mock public key.
-      const newPublicKey = 'G' + [...Array(55)].map(() => (~~(Math.random() * 36)).toString(36).toUpperCase()).join('');
+      const newPublicKey = generateRandomKey('G');
       
       const newAccount = {
         publicKey: newPublicKey,
@@ -83,12 +93,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         title: "Account Imported",
         description: "Your Stellar account has been successfully imported.",
       });
+      return true;
     } else {
        toast({
         variant: "destructive",
         title: "Invalid Secret Key",
         description: "Please enter a valid Stellar secret key (it should start with 'S' and be 56 characters long).",
       });
+      return false;
     }
   };
 

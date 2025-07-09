@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
+import { Html5Qrcode, type Html5QrcodeResult, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,71 +15,99 @@ import {
 import { QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const QR_READER_ID = "qr-reader";
+const QR_READER_ID = "qr-reader-view";
 
-export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: string) => void }) {
-  const [open, setOpen] = useState(false);
+const QrScanner = ({ 
+  onScanSuccess, 
+  onScanError 
+}: { 
+  onScanSuccess: (decodedText: string) => void;
+  onScanError: (errorMessage: string) => void;
+}) => {
+  // Use a ref to hold the scanner instance to prevent re-initialization on re-renders.
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const { toast } = useToast();
+  
+  // Use refs for callbacks to ensure the latest functions are used without re-triggering the effect.
+  const onScanSuccessRef = useRef(onScanSuccess);
+  onScanSuccessRef.current = onScanSuccess;
+
+  const onScanErrorRef = useRef(onScanError);
+  onScanErrorRef.current = onScanError;
 
   useEffect(() => {
-    if (!open) {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(err => {
-          console.error("Scanner stop failed", err);
+    // This effect should only run once on component mount.
+    // The empty dependency array [] ensures this.
+    
+    // Here is the key optimization: we specify that the scanner should ONLY look for QR_CODE.
+    // This makes it significantly faster and more reliable.
+  const scanner = new Html5Qrcode(QR_READER_ID, {
+  formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+  verbose: false // or true if you want logs
+});
+
+    scannerRef.current = scanner;
+    
+    const successCallback = (decodedText: string, result: Html5QrcodeResult) => {
+      // Stop the scanner immediately on success to prevent multiple callbacks.
+      if (scanner.isScanning) {
+        scanner.stop().then(() => {
+            onScanSuccessRef.current(decodedText);
+        }).catch((err) => {
+            console.error("Failed to stop scanner after success", err);
+            onScanSuccessRef.current(decodedText);
         });
       }
-      return;
-    }
-
-    if (!document.getElementById(QR_READER_ID)) {
-      return;
-    }
-
-    if (!scannerRef.current) {
-        scannerRef.current = new Html5Qrcode(QR_READER_ID, false);
-    }
-    const scanner = scannerRef.current;
-
-    const qrCodeSuccessCallback = (decodedText: string) => {
-      if (scanner.isScanning) {
-        scanner.stop().catch(err => console.error("Scanner stop failed on success", err));
-      }
-      onScanSuccess(decodedText);
-      setOpen(false);
     };
-
-    const qrCodeErrorCallback = (errorMessage: string) => {
-      // This callback is called frequently, so we don't log it to avoid console spam.
+    
+    const errorCallback = (errorMessage: string) => {
+      // This callback fires constantly when no QR code is in view. We can ignore these messages.
     };
 
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    
+    // Start scanning.
+    scanner.start(
+      { facingMode: "environment" },
+      config,
+      successCallback,
+      errorCallback
+    ).catch((err) => {
+      onScanErrorRef.current(String(err));
+    });
 
-    if (scanner.getState() !== Html5QrcodeScannerState.SCANNING) {
-      scanner.start(
-        { facingMode: "environment" },
-        config,
-        qrCodeSuccessCallback,
-        qrCodeErrorCallback
-      ).catch((err) => {
-        console.error("Unable to start scanning.", err);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Error',
-          description: 'Could not access the camera. Please grant permission in your browser settings.',
-        });
-      });
-    }
-
+    // The cleanup function is critical to stop the camera when the component unmounts.
     return () => {
       if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(err => {
-          console.error("Scanner stop failed on cleanup.", err);
+        scannerRef.current.stop().catch(error => {
+          console.warn("QR scanner failed to stop gracefully during cleanup.", error);
         });
       }
     };
-  }, [open, onScanSuccess, toast]);
+  }, []); 
 
+  return <div id={QR_READER_ID} className="w-full aspect-square rounded-md overflow-hidden bg-secondary" />;
+};
+
+
+export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleSuccess = (decodedText: string) => {
+    onScanSuccess(decodedText);
+    setOpen(false);
+  };
+
+  const handleError = (errorMessage: string) => {
+    console.error("QR Scanner Error:", errorMessage);
+    toast({
+      variant: 'destructive',
+      title: 'Camera Error',
+      description: 'Could not access the camera. Please check permissions and try again.',
+    });
+    setOpen(false);
+  };
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -95,7 +123,9 @@ export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: s
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-            <div id={QR_READER_ID} className="w-full rounded-md overflow-hidden bg-secondary min-h-[282px]" />
+           {/* The QrScanner component is only mounted when the dialog is open,
+               which allows its useEffect hook to handle the camera lifecycle correctly. */}
+           {open && <QrScanner onScanSuccess={handleSuccess} onScanError={handleError} />}
         </div>
         <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
