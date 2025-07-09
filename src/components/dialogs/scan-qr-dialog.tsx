@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
+import { useEffect, useState } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,71 +15,74 @@ import {
 import { QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const QR_READER_ID = "qr-reader";
+const QR_READER_ID = "qr-reader-view";
 
-export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const { toast } = useToast();
-
+// A dedicated component to manage the lifecycle of the QR scanner.
+// This ensures the scanner is initialized only when the component is mounted.
+const QrScanner = ({ 
+  onScanSuccess, 
+  onScanError 
+}: { 
+  onScanSuccess: (decodedText: string) => void;
+  onScanError: (errorMessage: string) => void;
+}) => {
   useEffect(() => {
-    if (!open) {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(err => {
-          console.error("Scanner stop failed", err);
-        });
-      }
-      return;
-    }
-
-    if (!document.getElementById(QR_READER_ID)) {
-      return;
-    }
-
-    if (!scannerRef.current) {
-        scannerRef.current = new Html5Qrcode(QR_READER_ID, false);
-    }
-    const scanner = scannerRef.current;
-
+    // This effect runs when the component mounts.
+    const html5QrCode = new Html5Qrcode(QR_READER_ID, false);
+    
     const qrCodeSuccessCallback = (decodedText: string) => {
-      if (scanner.isScanning) {
-        scanner.stop().catch(err => console.error("Scanner stop failed on success", err));
-      }
       onScanSuccess(decodedText);
-      setOpen(false);
     };
-
-    const qrCodeErrorCallback = (errorMessage: string) => {
-      // This callback is called frequently, so we don't log it to avoid console spam.
-    };
+    
+    // We don't need to do anything with minor errors, but the library requires a callback.
+    const qrCodeErrorCallback = (errorMessage: string) => { };
 
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-    if (scanner.getState() !== Html5QrcodeScannerState.SCANNING) {
-      scanner.start(
-        { facingMode: "environment" },
-        config,
-        qrCodeSuccessCallback,
-        qrCodeErrorCallback
-      ).catch((err) => {
-        console.error("Unable to start scanning.", err);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Error',
-          description: 'Could not access the camera. Please grant permission in your browser settings.',
-        });
-      });
-    }
+    // Start scanning
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      qrCodeSuccessCallback,
+      qrCodeErrorCallback
+    ).catch((err) => {
+      onScanError(String(err));
+    });
 
+    // Cleanup function to stop scanning when the component unmounts.
     return () => {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(err => {
-          console.error("Scanner stop failed on cleanup.", err);
+      // Check if the scanner is still active before trying to stop it.
+      if (html5QrCode.isScanning) {
+        html5QrCode.stop().catch(err => {
+          console.error("Failed to stop the QR scanner.", err);
         });
       }
     };
-  }, [open, onScanSuccess, toast]);
+  }, [onScanSuccess, onScanError]);
 
+  return <div id={QR_READER_ID} className="w-full rounded-md overflow-hidden bg-secondary min-h-[282px]" />;
+};
+
+
+export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleSuccess = (decodedText: string) => {
+    onScanSuccess(decodedText);
+    setOpen(false); // Close the dialog on successful scan
+  };
+
+  const handleError = (errorMessage: string) => {
+    console.error("QR Scanner Error:", errorMessage);
+    toast({
+      variant: 'destructive',
+      title: 'Camera Error',
+      description: 'Could not access the camera. Please check permissions and try again.',
+    });
+    setOpen(false); // Close the dialog on error
+  };
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -95,7 +98,8 @@ export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: s
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-            <div id={QR_READER_ID} className="w-full rounded-md overflow-hidden bg-secondary min-h-[282px]" />
+           {/* The QrScanner component is only mounted when the dialog is open */}
+           {open && <QrScanner onScanSuccess={handleSuccess} onScanError={handleError} />}
         </div>
         <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
