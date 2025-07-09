@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -44,59 +45,143 @@ export function BulkUploadDialog() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type !== 'text/csv') {
-        setError('Invalid file type. Please upload a CSV file.');
-        setFile(null);
-        setParsedData([]);
-        return;
-      }
       setFile(selectedFile);
       setError(null);
-      parseCsv(selectedFile);
+      setParsedData([]);
+
+      const fileType = selectedFile.type;
+      const fileName = selectedFile.name.toLowerCase();
+
+      if (fileName.endsWith('.csv') || fileType === 'text/csv') {
+        parseCsv(selectedFile);
+      } else if (fileName.endsWith('.json') || fileType === 'application/json') {
+        parseJson(selectedFile);
+      } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        parseExcel(selectedFile);
+      } else {
+        setError('Unsupported file type. Please upload a CSV, JSON, or Excel file.');
+      }
     }
   };
+  
+  const validateData = (data: any[]): { validData: ParsedRequest[], error: string | null } => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return { validData: [], error: "The file is empty or not in the expected array format." };
+    }
+
+    const requiredKeys = ['to', 'amount', 'for'];
+    const validData: ParsedRequest[] = [];
+
+    for (const item of data) {
+      const itemKeys = Object.keys(item).map(k => k.toLowerCase().trim());
+      const hasAllKeys = requiredKeys.every(key => itemKeys.includes(key));
+      
+      if (!hasAllKeys) {
+        return { validData: [], error: `Invalid data structure. Each item must contain 'to', 'amount', and 'for' keys.`};
+      }
+      
+      const toKey = Object.keys(item).find(k => k.toLowerCase().trim() === 'to') as string;
+      const amountKey = Object.keys(item).find(k => k.toLowerCase().trim() === 'amount') as string;
+      const forKey = Object.keys(item).find(k => k.toLowerCase().trim() === 'for') as string;
+
+      if (item[toKey] && item[amountKey] && item[forKey]) {
+          validData.push({
+            to: String(item[toKey]),
+            amount: String(item[amountKey]),
+            for: String(item[forKey]),
+          });
+      }
+    }
+    
+    if (validData.length === 0) {
+       return { validData: [], error: "No valid records found in the file." };
+    }
+
+    return { validData, error: null };
+  }
 
   const parseCsv = (csvFile: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
-      const text = event.target?.result as string;
-      const rows = text.split('\n').filter(row => row.trim() !== '');
-      const headerRow = rows.shift()?.trim();
-      
-      if (!headerRow) {
-        setError("Invalid CSV format. The file appears to be empty.");
-        setParsedData([]);
-        return;
+      try {
+        const text = event.target?.result as string;
+        const rows = text.split('\n').filter(row => row.trim() !== '');
+        const headerRow = rows.shift()?.trim();
+        
+        if (!headerRow) {
+          setError("Invalid CSV: The file appears to be empty.");
+          return;
+        }
+
+        const headers = headerRow.toLowerCase().split(',').map(h => h.trim());
+        const requiredHeaders = ['to', 'amount', 'for'];
+        if (!requiredHeaders.every(h => headers.includes(h))) {
+            setError("Invalid CSV format. Header must contain 'to', 'amount', and 'for' columns.");
+            return;
+        }
+
+        const data = rows.map(row => {
+            const values = row.split(',');
+            const entry: {[key: string]: string} = {};
+            headers.forEach((header, index) => {
+                entry[header] = values[index]?.trim();
+            });
+            return entry;
+        });
+
+        const { validData, error } = validateData(data);
+        if (error) {
+            setError(error);
+        } else {
+            setParsedData(validData);
+        }
+      } catch (err) {
+        setError("Failed to parse CSV file.");
       }
-
-      const headers = headerRow.toLowerCase().split(',').map(h => h.trim());
-      
-      if (!headers.includes('to') || !headers.includes('amount') || !headers.includes('for')) {
-        setError("Invalid CSV format. Header must contain 'to', 'amount', and 'for' columns.");
-        setParsedData([]);
-        return;
-      }
-
-      const toIndex = headers.indexOf('to');
-      const amountIndex = headers.indexOf('amount');
-      const forIndex = headers.indexOf('for');
-
-      const data = rows.map(row => {
-        const values = row.split(',');
-        return {
-          to: values[toIndex]?.trim(),
-          amount: values[amountIndex]?.trim(),
-          for: values[forIndex]?.trim(),
-        };
-      }).filter(d => d.to && d.amount && d.for);
-
-      setParsedData(data);
-    };
-    reader.onerror = () => {
-        setError("Failed to read the file.");
-        setParsedData([]);
     };
     reader.readAsText(csvFile);
+  };
+
+  const parseJson = (jsonFile: File) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+            const text = event.target?.result as string;
+            const data = JSON.parse(text);
+            const { validData, error } = validateData(data);
+            if (error) {
+                setError(error);
+            } else {
+                setParsedData(validData);
+            }
+        } catch (err) {
+            setError("Invalid JSON file. Please check the file format.");
+        }
+      };
+      reader.readAsText(jsonFile);
+  };
+
+  const parseExcel = (excelFile: File) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+            const data = event.target?.result;
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            
+            const { validData, error } = validateData(jsonData);
+            if (error) {
+                setError(error);
+            } else {
+                setParsedData(validData);
+            }
+        } catch (err) {
+            setError("Failed to parse Excel file.");
+        }
+      };
+      reader.readAsArrayBuffer(excelFile);
   };
 
   const handleSubmit = () => {
@@ -150,15 +235,15 @@ export function BulkUploadDialog() {
         <DialogHeader>
           <DialogTitle>Bulk Upload Payment Requests</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to create multiple payment requests at once. The file must have columns: `to`, `amount`, `for`.
+            Upload a CSV, JSON, or Excel file to create multiple requests. The file must contain columns/keys: `to`, `amount`, `for`.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="csv-file" className="text-right">
-              CSV File
+              Upload File
             </Label>
-            <Input id="csv-file" type="file" accept=".csv" onChange={handleFileChange} className="col-span-3" />
+            <Input id="csv-file" type="file" accept=".csv, .json, .xls, .xlsx" onChange={handleFileChange} className="col-span-3" />
           </div>
           {error && <p className="text-sm text-destructive col-span-4 text-center">{error}</p>}
           
