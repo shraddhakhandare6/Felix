@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -32,6 +33,7 @@ const QrScanner = ({
   onScanErrorRef.current = onScanError;
 
   useEffect(() => {
+    // This instance needs to be defined in the effect scope to be accessible in the cleanup function.
     const html5QrCode = new Html5Qrcode(QR_READER_ID, false);
     
     const qrCodeSuccessCallback = (decodedText: string) => {
@@ -41,6 +43,7 @@ const QrScanner = ({
     // We don't need to do anything with minor errors, but the library requires a callback.
     const qrCodeErrorCallback = (errorMessage: string) => { };
 
+    // Enforce a square scanning region.
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
     // Start scanning
@@ -50,21 +53,26 @@ const QrScanner = ({
       qrCodeSuccessCallback,
       qrCodeErrorCallback
     ).catch((err) => {
+      // This catches critical errors like camera permission denial
       onScanErrorRef.current(String(err));
     });
 
-    // Cleanup function to stop scanning when the component unmounts.
+    // This cleanup function is CRITICAL. It runs when the component unmounts.
+    // In React's Strict Mode (used in development), components mount, unmount, and remount.
+    // This cleanup ensures the first scanner instance is destroyed before the second one is created.
     return () => {
-      // Check if the scanner is still active before trying to stop it.
       if (html5QrCode.isScanning) {
         html5QrCode.stop().catch(err => {
-          console.error("Failed to stop the QR scanner.", err);
+          // This can fail if the scanner is already stopped or in a bad state.
+          // It's safe to ignore, as our goal is just to ensure it's not running.
+          console.error("Failed to stop the QR scanner on cleanup.", err);
         });
       }
     };
-  }, []); // Empty dependency array ensures this effect runs only once on mount
+  }, []); // The empty dependency array ensures this effect runs only on mount/unmount.
 
-  return <div id={QR_READER_ID} className="w-full rounded-md overflow-hidden bg-secondary min-h-[282px]" />;
+  // Use aspect-square to force a square shape for the video container
+  return <div id={QR_READER_ID} className="w-full aspect-square rounded-md overflow-hidden bg-secondary" />;
 };
 
 
