@@ -6,6 +6,7 @@ import { AuthProvider } from '@/context/auth-context';
 import { UserProvider } from '@/context/user-context';
 import { PaymentRequestsProvider } from '@/context/payment-requests-context';
 import { AccountProvider } from '@/context/account-context';
+import { KeycloakProvider } from '@/components/keycloak-provider';
 
 export const metadata: Metadata = {
   title: 'Felix - Blockchain Service & Wallet Platform',
@@ -25,6 +26,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
+      <KeycloakProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -42,6 +44,7 @@ export default function RootLayout({
           </UserProvider>
           <Toaster />
         </ThemeProvider>
+      </KeycloakProvider>
       </body>
     </html>
   );
