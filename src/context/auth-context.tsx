@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUserProfile(null);
         if (!isPublicPage(pathname)) {
-          keycloak.login();
+          router.push('/login');
         }
       }
     }

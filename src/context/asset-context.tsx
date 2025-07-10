@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -26,18 +25,19 @@ export function AssetProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const response = await fetch(`${apiBaseUrl}`);
+      const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
+      //  const response = await fetch('https://5000-firebase-felix-cashflow-1751957540178.cluster-htdgsbmflbdmov5xrjithceibm.cloudworkstations.dev/api/v1/assets/');
       const result = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !result.success) {
         throw new Error(result.meta?.message || 'Failed to fetch assets.');
       }
 
-      if (result && Array.isArray(result)) {
-        const fetchedAssets = result
+      if (result.data && Array.isArray(result.data)) {
+        const fetchedAssets = result.data
           .map((asset: any) => ({
-            id: String(asset.id), 
-            assetCode: asset.name || `Asset ${asset.id}`,
+            id: asset.id || asset.asset_code || asset.assetCode,
+            assetCode: asset.asset_code || asset.assetCode,
           }))
           .filter((asset: Asset) => asset.assetCode);
         setAssets(fetchedAssets);
