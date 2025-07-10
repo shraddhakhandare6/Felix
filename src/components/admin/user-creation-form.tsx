@@ -33,7 +33,8 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlatformUsers } from '@/context/platform-users-context';
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  firstName: z.string().min(1, { message: "First name is required." }),
+  lastName: z.string().min(1, { message: "Last name is required." }),
   email: z.string().email({ message: "Please enter a valid email." }),
   group: z.string({ required_error: "Please select a group." }),
 });
@@ -45,16 +46,22 @@ export function UserCreationForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    addUser(values);
+    const fullName = `${values.firstName} ${values.lastName}`;
+    addUser({
+        name: fullName,
+        email: values.email,
+        group: values.group
+    });
     toast({
       title: 'User Created',
-      description: `User ${values.name} has been successfully created.`,
+      description: `User ${fullName} has been successfully created.`,
     });
     form.reset();
   }
@@ -72,12 +79,25 @@ export function UserCreationForm() {
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>First Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="John" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Doe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

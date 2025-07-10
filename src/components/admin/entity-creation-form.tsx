@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Form,
   FormControl,
@@ -28,7 +27,6 @@ import { useEntities } from '@/context/entity-context';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   ownerEmail: z.string().email({ message: "Please enter a valid email for the owner." }),
 });
 
@@ -40,13 +38,16 @@ export function EntityCreationForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      description: '',
       ownerEmail: '',
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    addEntity(values);
+    addEntity({
+        name: values.name,
+        ownerEmail: values.ownerEmail,
+        description: '' // Passing an empty string since it's required by the context
+    });
     toast({
       title: 'Entity Created',
       description: `Entity ${values.name} has been successfully created.`,
@@ -73,19 +74,6 @@ export function EntityCreationForm() {
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Project Phoenix" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="A short description of the entity." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
