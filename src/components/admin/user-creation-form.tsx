@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useKeycloak } from '@react-keycloak/web';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -42,6 +43,7 @@ const formSchema = z.object({
 export function UserCreationForm() {
   const { toast } = useToast();
   const { addUser } = usePlatformUsers();
+  const { keycloak } = useKeycloak();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,18 +54,64 @@ export function UserCreationForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    const fullName = `${values.firstName} ${values.lastName}`;
-    addUser({
-        name: fullName,
-        email: values.email,
-        group: values.group
-    });
-    toast({
-      title: 'User Created',
-      description: `User ${fullName} has been successfully created.`,
-    });
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      toast({
+        variant: 'destructive',
+        title: 'Configuration Error',
+        description: 'The API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.',
+      });
+      return;
+    }
+    
+    if (!keycloak.token) {
+       toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'Unable to get authentication token. Please log in again.',
+      });
+      return;
+    }
+
+    try {
+        const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/users`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${keycloak.token}`
+            },
+            body: JSON.stringify(values)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Failed to create user. Please try again.' }));
+            throw new Error(errorData.message || 'An unknown error occurred.');
+        }
+
+        // The API call was successful, now update the local state
+        const fullName = `${values.firstName} ${values.lastName}`;
+        addUser({
+            name: fullName,
+            email: values.email,
+            group: values.group
+        });
+
+        toast({
+          title: 'User Created',
+          description: `User ${fullName} has been successfully created.`,
+        });
+
+        form.reset();
+
+    } catch (error) {
+        console.error("Failed to create user:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Creation Failed',
+            description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    }
   }
 
   return (
