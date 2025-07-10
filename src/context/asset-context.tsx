@@ -27,17 +27,18 @@ export function AssetProvider({ children }: { children: ReactNode }) {
     }
     try {
       const response = await fetch(`${apiBaseUrl}`);
-      const result = await response.json();
+      
+      const result = await response.json(); 
 
       if (!response.ok) {
         throw new Error('Failed to fetch assets.');
       }
-
+      
       if (result && Array.isArray(result)) {
         const fetchedAssets = result
           .map((asset: any) => ({
             id: asset.id,
-            assetCode: asset.company, // Map 'company' to 'assetCode'
+            assetCode: asset.company, 
           }))
           .filter((asset: Asset) => asset.id && asset.assetCode);
         setAssets(fetchedAssets);
