@@ -46,7 +46,6 @@ export function EntityCreationForm() {
     addEntity({
         name: values.name,
         ownerEmail: values.ownerEmail,
-        description: '' // Passing an empty string since it's required by the context
     });
     toast({
       title: 'Entity Created',
