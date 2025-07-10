@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface Asset {
+  asset_code: string;
   id: string;
   assetCode: string;
 }
@@ -12,12 +13,16 @@ export interface Asset {
 interface AssetContextType {
   assets: Asset[];
   refreshAssets: () => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
 }
 
 const AssetContext = createContext<AssetContextType | undefined>(undefined);
 
 export function AssetProvider({ children }: { children: ReactNode }) {
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const refreshAssets = useCallback(async () => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -25,27 +30,37 @@ export function AssetProvider({ children }: { children: ReactNode }) {
       console.error('API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.');
       return;
     }
-    try {
-      const response = await fetch(`${apiBaseUrl}`);
-      
-      const result = await response.json(); 
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch assets.');
-      }
+    setIsLoading(true);
+    setError(null); // Reset the error state
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
+      const responseText = await response.text();
       
-      if (result && Array.isArray(result)) {
-        const fetchedAssets = result
-          .map((asset: any) => ({
-            id: asset.id,
-            assetCode: asset.company, 
-          }))
-          .filter((asset: Asset) => asset.id && asset.assetCode);
-        setAssets(fetchedAssets);
+      if (response.ok && responseText) {
+          const parsedJson = JSON.parse(responseText);
+          if (parsedJson && Array.isArray(parsedJson.data)) {
+            const fetchedAssets = parsedJson.data
+              .map((asset: any) => ({
+                id: asset.id,
+                asset_code: asset.asset_code || asset.company, 
+                assetCode: asset.asset_code || asset.company,
+              }))
+              .filter((asset: Asset) => asset.id && asset.asset_code);
+
+            // Replace the old assets with the newly fetched list to prevent duplicates
+            setAssets(fetchedAssets);
+          }
+      } else {
+           console.error('Failed to fetch assets, or response was empty.');
       }
+
     } catch (error) {
       console.error('Failed to fetch assets:', error);
-      setAssets([]);
+      setError('Failed to fetch assets');
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -54,7 +69,7 @@ export function AssetProvider({ children }: { children: ReactNode }) {
   }, [refreshAssets]);
 
   return (
-    <AssetContext.Provider value={{ assets, refreshAssets }}>
+    <AssetContext.Provider value={{ assets, refreshAssets, isLoading, error }}>
       {children}
     </AssetContext.Provider>
   );
