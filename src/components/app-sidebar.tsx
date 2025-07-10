@@ -15,6 +15,7 @@ import {
   Sun,
   User,
   Shield,
+  Briefcase,
 } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useUser } from '@/context/user-context';
@@ -53,6 +54,7 @@ const menuItems = [
   { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { href: '/payment-requests', label: 'Payment Requests', icon: Send },
   { href: '/contacts', label: 'Contacts', icon: Users },
+  { href: '/entity', label: 'Entity', icon: Briefcase },
   { href: '/admin', label: 'Admin', icon: Shield },
   { href: '/account', label: 'Account', icon: Settings },
 ];
