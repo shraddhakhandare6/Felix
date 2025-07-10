@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -35,7 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isKeycloakReady, setIsKeycloakReady] = useState(false);
 
   // This effect checks if the keycloak instance is functional.
-  // The keycloak object from the library might be a dummy object if config is missing.
   useEffect(() => {
     if (initialized) {
       // A real keycloak instance will have an `authServerUrl`. A dummy one won't.
@@ -45,27 +43,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [initialized, keycloak]);
 
-
   useEffect(() => {
     if (initialized && keycloak && isKeycloakReady) {
       if (keycloak.authenticated) {
-        keycloak.loadUserProfile().then(profile => {
-          setUserProfile(profile);
-          if (profile.username && profile.email) {
-            updateUser({ username: profile.username, email: profile.email });
-          }
-        });
+        if (!userProfile) {
+          // Only fetch user profile if it's not already set
+          keycloak.loadUserProfile().then(profile => {
+            setUserProfile(profile);
+            if (profile.username && profile.email) {
+              updateUser({ username: profile.username, email: profile.email });
+            }
+          });
+        }
+
+        // Redirect to dashboard if authenticated and on the login page
         if (pathname === '/login') {
           router.push('/dashboard');
         }
       } else {
         setUserProfile(null);
+        // Redirect to login page if not authenticated and not on a public page
         if (!isPublicPage(pathname)) {
           router.push('/login');
         }
       }
     }
-  }, [initialized, keycloak, pathname, router, updateUser, isKeycloakReady]);
+  }, [initialized, keycloak, pathname, router, updateUser, isKeycloakReady, userProfile]);
 
   const login = () => keycloak?.login();
   const logout = () => {

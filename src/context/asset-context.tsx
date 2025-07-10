@@ -26,7 +26,6 @@ export function AssetProvider({ children }: { children: ReactNode }) {
     }
     try {
       const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
-      //  const response = await fetch('https://5000-firebase-felix-cashflow-1751957540178.cluster-htdgsbmflbdmov5xrjithceibm.cloudworkstations.dev/api/v1/assets/');
       const result = await response.json();
 
       if (!response.ok || !result.success) {
