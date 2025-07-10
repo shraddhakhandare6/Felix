@@ -42,7 +42,7 @@ const formSchema = z.object({
 
 export function UserCreationForm() {
   const { toast } = useToast();
-  const { addUser } = usePlatformUsers();
+  const { addUser, fetchUsers } = usePlatformUsers();
   const { keycloak } = useKeycloak();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -89,19 +89,15 @@ export function UserCreationForm() {
             throw new Error(errorData.message || 'An unknown error occurred.');
         }
 
-        // The API call was successful, now update the local state
         const fullName = `${values.firstName} ${values.lastName}`;
-        addUser({
-            name: fullName,
-            email: values.email,
-            group: values.group
-        });
-
+        
         toast({
           title: 'User Created',
           description: `User ${fullName} has been successfully created.`,
         });
-
+        
+        // Instead of manually adding, we refetch the list to get the latest data from the server.
+        fetchUsers();
         form.reset();
 
     } catch (error) {
