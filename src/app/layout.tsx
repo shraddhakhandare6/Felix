@@ -11,6 +11,7 @@ import { ContactsProvider } from '@/context/contacts-context';
 import { EntityProvider } from '@/context/entity-context';
 import { PlatformUsersProvider } from '@/context/platform-users-context';
 import { AssetProvider } from '@/context/asset-context';
+import { ServiceProvider } from '@/context/service-context';
 
 export const metadata: Metadata = {
   title: 'Felix - Blockchain Service & Wallet Platform',
@@ -44,9 +45,11 @@ export default function RootLayout({
                   <EntityProvider>
                     <PlatformUsersProvider>
                       <AssetProvider>
-                        <AuthProvider>
-                          {children}
-                        </AuthProvider>
+                        <ServiceProvider>
+                          <AuthProvider>
+                            {children}
+                          </AuthProvider>
+                        </ServiceProvider>
                       </AssetProvider>
                     </PlatformUsersProvider>
                   </EntityProvider>

@@ -15,9 +15,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useServices } from '@/context/service-context';
 
 export function CreateOfferDialog() {
   const [open, setOpen] = useState(false);
+  const { services } = useServices();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -58,7 +61,18 @@ export function CreateOfferDialog() {
               <Label htmlFor="service" className="text-right">
                 Service
               </Label>
-              <Input id="service" placeholder="e.g., Logo Design" className="col-span-3" />
+              <Select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a service" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((service) => (
+                    <SelectItem key={service.name} value={service.name}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="price" className="text-right">

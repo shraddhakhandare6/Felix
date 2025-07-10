@@ -20,41 +20,11 @@ import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CreateServiceDialog } from "@/components/dialogs/create-service-dialog";
-
-const services = [
-  {
-    name: "UX/UI Design Mockup",
-    description: "High-fidelity mockups for web and mobile apps.",
-    priceModel: "Fixed",
-    status: "Active",
-  },
-  {
-    name: "Backend API Endpoint",
-    description: "Develop and deploy a single API endpoint.",
-    priceModel: "Per Endpoint",
-    status: "Active",
-  },
-  {
-    name: "Technical Documentation",
-    description: "Create comprehensive technical docs for a project.",
-    priceModel: "Per Page",
-    status: "Active",
-  },
-  {
-    name: "1 Hour Consulting",
-    description: "Expert advice on blockchain technology.",
-    priceModel: "Hourly",
-    status: "Active",
-  },
-    {
-    name: "Code Review",
-    description: "Review up to 1,000 lines of code for quality.",
-    priceModel: "Fixed",
-    status: "Draft",
-  },
-]
+import { useServices } from "@/context/service-context";
 
 export default function MarketplacePage() {
+  const { services } = useServices();
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
