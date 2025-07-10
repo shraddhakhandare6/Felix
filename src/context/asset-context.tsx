@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -25,20 +26,20 @@ export function AssetProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
+      const response = await fetch(`${apiBaseUrl}`);
       const result = await response.json();
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.meta?.message || 'Failed to fetch assets.');
+      if (!response.ok) {
+        throw new Error('Failed to fetch assets.');
       }
 
-      if (result.data && Array.isArray(result.data)) {
-        const fetchedAssets = result.data
+      if (result && Array.isArray(result)) {
+        const fetchedAssets = result
           .map((asset: any) => ({
-            id: asset.id || asset.asset_code || asset.assetCode,
-            assetCode: asset.asset_code || asset.assetCode,
+            id: asset.id,
+            assetCode: asset.company, // Map 'company' to 'assetCode'
           }))
-          .filter((asset: Asset) => asset.assetCode);
+          .filter((asset: Asset) => asset.id && asset.assetCode);
         setAssets(fetchedAssets);
       }
     } catch (error) {
