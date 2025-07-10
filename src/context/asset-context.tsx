@@ -49,8 +49,8 @@ export function AssetProvider({ children }: { children: ReactNode }) {
               }))
               .filter((asset: Asset) => asset.id && asset.asset_code);
 
-            // Replace the old assets with the newly fetched list to prevent duplicates
-            setAssets(fetchedAssets);
+            // Append newly fetched assets to the existing list
+            setAssets(prevAssets => [...prevAssets, ...fetchedAssets]);
           }
       } else {
            console.error('Failed to fetch assets, or response was empty.');
