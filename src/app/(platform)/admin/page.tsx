@@ -18,9 +18,7 @@ export default function AdminPage() {
   const router = useRouter();
 
   const handleEntityClick = (entityId: string) => {
-    // For now, it navigates to the generic entity page.
-    // This can be updated to /entity/${entityId} when that page is ready.
-    router.push('/entity');
+    router.push(`/entity?entityId=${entityId}`);
   };
 
   return (

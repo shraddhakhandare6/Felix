@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -40,9 +40,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useEntities } from '@/context/entity-context';
-import { usePlatformUsers } from '@/context/platform-users-context';
 import { useServices } from '@/context/service-context';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams } from 'next/navigation';
 
 const addUserSchema = z.object({
   entity: z.string({ required_error: "Please select an entity." }),
@@ -54,18 +54,27 @@ const mappedUsersData = [
     { id: '2', name: "Bob Williams", email: "bob.w@example.com", entity: "CoE Desk" },
 ];
 
-export default function EntityPage() {
+function EntityManagementComponent() {
     const { entities } = useEntities();
     const { services } = useServices();
     const { toast } = useToast();
     const [mappedUsers, setMappedUsers] = useState(mappedUsersData);
+    const searchParams = useSearchParams();
+    const entityId = searchParams.get('entityId');
 
     const form = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
         defaultValues: {
             email: "",
+            entity: entityId || undefined,
         }
     });
+
+    useEffect(() => {
+        if (entityId) {
+            form.setValue('entity', entityId);
+        }
+    }, [entityId, form]);
 
     function onAddUser(values: z.infer<typeof addUserSchema>) {
         const entityName = entities.find(e => e.id === values.entity)?.name || "Unknown Entity";
@@ -80,7 +89,10 @@ export default function EntityPage() {
             title: "User Mapped",
             description: `${values.email} has been mapped to ${entityName}.`,
         });
-        form.reset();
+        form.reset({
+            email: "",
+            entity: entityId || undefined
+        });
     }
 
     function unmapUser(userId: string) {
@@ -119,7 +131,7 @@ export default function EntityPage() {
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Entity</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select an entity" />
@@ -206,4 +218,13 @@ export default function EntityPage() {
       </div>
     </div>
   );
+}
+
+
+export default function EntityPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <EntityManagementComponent />
+        </Suspense>
+    )
 }
