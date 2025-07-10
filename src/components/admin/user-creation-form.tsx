@@ -42,7 +42,7 @@ const formSchema = z.object({
 
 export function UserCreationForm() {
   const { toast } = useToast();
-  const { addUser, fetchUsers } = usePlatformUsers();
+  const { fetchUsers } = usePlatformUsers();
   const { keycloak } = useKeycloak();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -96,7 +96,7 @@ export function UserCreationForm() {
           description: `User ${fullName} has been successfully created.`,
         });
         
-        // Instead of manually adding, we refetch the list to get the latest data from the server.
+        // Refetch the list to get the latest data from the server, including the new user.
         fetchUsers();
         form.reset();
 

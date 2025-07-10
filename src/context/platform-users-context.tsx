@@ -32,11 +32,7 @@ export function PlatformUsersProvider({ children }: { children: ReactNode }) {
     
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!apiBaseUrl) {
-      toast({
-        variant: 'destructive',
-        title: 'Configuration Error',
-        description: 'The API endpoint is not configured.',
-      });
+      // Silently return if not configured, the form will show the error.
       return;
     }
 
@@ -76,8 +72,10 @@ export function PlatformUsersProvider({ children }: { children: ReactNode }) {
   }, [initialized, keycloak.token, toast]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    if (initialized && keycloak.token) {
+      fetchUsers();
+    }
+  }, [fetchUsers, initialized, keycloak.token]);
 
 
   const addUser = (newUser: Omit<PlatformUser, 'id'>) => {
