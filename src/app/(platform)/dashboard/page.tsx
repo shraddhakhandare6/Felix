@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -119,12 +120,21 @@ function DashboardPageContent() {
     );
   }
 
+  const getUsername = () => {
+    const preferredUsername = keycloak.tokenParsed?.preferred_username;
+    if (preferredUsername && preferredUsername.includes('@')) {
+      return preferredUsername.split('@')[0];
+    }
+    return preferredUsername;
+  };
+
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       {keycloak?.authenticated && (
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            Welcome, {keycloak.tokenParsed?.preferred_username}
+            Welcome, {getUsername()}
           </h2>
           <Button variant="destructive" onClick={logout}>
             Logout
