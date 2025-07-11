@@ -84,10 +84,10 @@ export function UserCreationForm() {
           'Authorization': `Bearer ${keycloak.token}`,
         },
         body: JSON.stringify({
-          firstname: values.firstName,
-          lastname: values.lastName,
+          firstName: values.firstName,
+          lastName: values.lastName,
           email: values.email,
-          groups: [values.group]
+          group: values.group
         }),
       });
 
