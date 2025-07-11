@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -51,6 +52,7 @@ export function UserCreationForm() {
       firstName: '',
       lastName: '',
       email: '',
+      group: 'Users',
     },
   });
 
@@ -173,9 +175,6 @@ export function UserCreationForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Developers">Developers</SelectItem>
-                      <SelectItem value="QA">QA</SelectItem>
-                      <SelectItem value="DevOps">DevOps</SelectItem>
                       <SelectItem value="Users">Users</SelectItem>
                     </SelectContent>
                   </Select>
