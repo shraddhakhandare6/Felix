@@ -88,7 +88,6 @@ const QrScanner = ({
   return <div id={QR_READER_ID} className="w-full aspect-square rounded-md overflow-hidden bg-secondary" />;
 };
 
-
 export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: string) => void }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
