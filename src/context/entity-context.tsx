@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -48,21 +49,17 @@ export function EntityProvider({ children }: { children: ReactNode }) {
 
       const result = await response.json();
       
-      // Assuming the API returns a single object or an array of objects
-      const dataToProcess = Array.isArray(result) ? result : [result];
+      // The API returns an array of entity data objects.
+      const dataToProcess = Array.isArray(result) ? result : [];
 
-      const fetchedEntities = dataToProcess.map((entity: any, index: number) => ({
-        id: entity.id || `${entity.entity}-${index}`, // Use entity name and index if no id
-        name: entity.entity,
-        ownerEmail: entity.adminEmail,
+      const fetchedEntities = dataToProcess.map((item: any) => ({
+        id: item.id || `${item.entity}-${item.adminEmail}`, // Fallback id
+        name: item.entity,
+        ownerEmail: item.adminEmail,
         description: '', // No description from this API
       }));
 
-      // A simple way to merge and avoid duplicates by name
-      const allEntities = [...entities, ...fetchedEntities];
-      const uniqueEntities = Array.from(new Map(allEntities.map(e => [e.name, e])).values());
-
-      setEntities(uniqueEntities);
+      setEntities(fetchedEntities);
 
     } catch (error) {
       console.error("Failed to fetch entities:", error);
@@ -73,17 +70,19 @@ export function EntityProvider({ children }: { children: ReactNode }) {
       });
       setEntities([]);
     }
-  }, [initialized, keycloak.token, toast, entities]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized, keycloak.token, toast]);
 
 
   useEffect(() => {
     if (initialized && keycloak.token) {
       fetchEntities();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialized, keycloak.token]);
+  }, [fetchEntities, initialized, keycloak.token]);
 
   const addEntity = (newEntity: Omit<Entity, 'id' | 'description'>) => {
+    // This function is now mainly for optimistic updates if needed,
+    // but the source of truth is fetchEntities.
     const entityWithId: Entity = {
       id: `entity_${Date.now()}`,
       description: '',
