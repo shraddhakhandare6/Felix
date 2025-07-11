@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -7,12 +8,13 @@ export interface Service {
   name: string;
   description: string;
   priceModel: 'Fixed' | 'Per Endpoint' | 'Per Page' | 'Hourly';
-  status: 'Active' | 'Draft';
+  status: 'Active' | 'Draft' | 'Archived';
 }
 
 interface ServiceContextType {
   services: Service[];
   addService: (service: Service) => void;
+  archiveService: (serviceName: string) => void;
 }
 
 const initialServices: Service[] = [
@@ -57,8 +59,16 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
     setServices((prev) => [...prev, service]);
   };
 
+  const archiveService = (serviceName: string) => {
+    setServices((prevServices) =>
+      prevServices.map((service) =>
+        service.name === serviceName ? { ...service, status: 'Archived' } : service
+      )
+    );
+  };
+
   return (
-    <ServiceContext.Provider value={{ services, addService }}>
+    <ServiceContext.Provider value={{ services, addService, archiveService }}>
       {children}
     </ServiceContext.Provider>
   );
