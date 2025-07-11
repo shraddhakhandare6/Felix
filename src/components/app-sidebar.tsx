@@ -50,7 +50,7 @@ import { useAuth } from '@/context/auth-context';
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/wallet', label: 'Wallet', icon: Wallet },
-  { href: '/offers', label: 'Offers', icon: ArrowLeftRight },
+  { href: '/services', label: 'Services', icon: ArrowLeftRight },
   { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
   { href: '/payment-requests', label: 'Payment Requests', icon: Send },
   { href: '/contacts', label: 'Contacts', icon: Users },

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -36,11 +37,11 @@ const myOffers = [
     { type: "Buy", service: "Logo Design", price: "50 BD", status: "Active" },
 ]
 
-export default function OffersPage() {
+export default function ServicesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Offers</h1>
+        <h1 className="text-3xl font-bold">Services</h1>
         <CreateOfferDialog />
       </div>
 
