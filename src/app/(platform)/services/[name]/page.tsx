@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/form"
 import { useToast } from '@/hooks/use-toast';
 import { PageLoader } from '@/components/page-loader';
+import { ChevronLeft } from 'lucide-react';
 
 const serviceFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters."),
@@ -104,7 +105,13 @@ function ServiceDetailContent() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold">Edit Service</h1>
-                    <Button type="submit">Save Changes</Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" type="button" onClick={() => router.back()}>
+                            <ChevronLeft className="mr-2 h-4 w-4" />
+                            Back
+                        </Button>
+                        <Button type="submit">Save Changes</Button>
+                    </div>
                 </div>
                 <Card>
                     <CardHeader>
