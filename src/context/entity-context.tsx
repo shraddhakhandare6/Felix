@@ -49,17 +49,20 @@ export function EntityProvider({ children }: { children: ReactNode }) {
 
       const result = await response.json();
       
-      // The API returns an array of entity data objects.
-      const dataToProcess = Array.isArray(result) ? result : [];
+      const dataToProcess = result?.getEntityResponse?.data;
 
-      const fetchedEntities = dataToProcess.map((item: any) => ({
-        id: item.id || `${item.entity}-${item.adminEmail}`, // Fallback id
-        name: item.entity,
-        ownerEmail: item.adminEmail,
-        description: '', // No description from this API
-      }));
-
-      setEntities(fetchedEntities);
+      if (Array.isArray(dataToProcess)) {
+        const fetchedEntities = dataToProcess.map((item: any) => ({
+          id: item.id,
+          name: item.entity_name,
+          ownerEmail: item.admin_email,
+          description: '', 
+        }));
+        setEntities(fetchedEntities);
+      } else {
+        console.warn("Fetched data is not in the expected format:", result);
+        setEntities([]);
+      }
 
     } catch (error) {
       console.error("Failed to fetch entities:", error);
@@ -81,8 +84,6 @@ export function EntityProvider({ children }: { children: ReactNode }) {
   }, [fetchEntities, initialized, keycloak.token]);
 
   const addEntity = (newEntity: Omit<Entity, 'id' | 'description'>) => {
-    // This function is now mainly for optimistic updates if needed,
-    // but the source of truth is fetchEntities.
     const entityWithId: Entity = {
       id: `entity_${Date.now()}`,
       description: '',
