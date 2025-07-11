@@ -1,7 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useKeycloak } from '@react-keycloak/web';
+import { useToast } from '@/hooks/use-toast';
 
 export interface PlatformUser {
   id: string;
@@ -13,17 +15,68 @@ export interface PlatformUser {
 interface PlatformUsersContextType {
   users: PlatformUser[];
   addUser: (newUser: Omit<PlatformUser, 'id'>) => void;
+  fetchUsers: () => void;
 }
-
-const initialUsers: PlatformUser[] = [
-    { id: '1', name: "Alice Johnson", email: "alice.j@example.com", group: "Developers" },
-    { id: '2', name: "Bob Williams", email: "bob.w@example.com", group: "Users" },
-];
 
 const PlatformUsersContext = createContext<PlatformUsersContextType | undefined>(undefined);
 
 export function PlatformUsersProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<PlatformUser[]>(initialUsers);
+  const [users, setUsers] = useState<PlatformUser[]>([]);
+  const { keycloak, initialized } = useKeycloak();
+  const { toast } = useToast();
+  
+  const fetchUsers = useCallback(async () => {
+    if (!initialized || !keycloak.token) {
+      return;
+    }
+    
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      // Silently return if not configured, the form will show the error.
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/users`, {
+        headers: {
+          'Authorization': `Bearer ${keycloak.token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+
+      const result = await response.json();
+      
+      if (result.getAllRealmUsersResponse && result.getAllRealmUsersResponse.data) {
+        const fetchedUsers = result.getAllRealmUsersResponse.data.map((user: any) => ({
+          id: user.id || user.email,
+          name: `${user.firstname || ''} ${user.lastname || ''}`.trim(),
+          email: user.email,
+          group: user.group || 'Users', // Default group if not provided
+        }));
+        setUsers(fetchedUsers);
+      } else {
+         setUsers([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Fetch Failed',
+        description: error instanceof Error ? error.message : 'An unknown error occurred while fetching users.',
+      });
+      setUsers([]);
+    }
+  }, [initialized, keycloak.token, toast]);
+
+  useEffect(() => {
+    if (initialized && keycloak.token) {
+      fetchUsers();
+    }
+  }, [fetchUsers, initialized, keycloak.token]);
+
 
   const addUser = (newUser: Omit<PlatformUser, 'id'>) => {
     const userWithId: PlatformUser = {
@@ -34,7 +87,7 @@ export function PlatformUsersProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PlatformUsersContext.Provider value={{ users, addUser }}>
+    <PlatformUsersContext.Provider value={{ users, addUser, fetchUsers }}>
       {children}
     </PlatformUsersContext.Provider>
   );

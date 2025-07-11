@@ -1,7 +1,10 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useKeycloak } from '@react-keycloak/web';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Entity {
   id: string;
@@ -12,29 +15,85 @@ export interface Entity {
 
 interface EntityContextType {
   entities: Entity[];
-  addEntity: (newEntity: Omit<Entity, 'id'>) => void;
+  addEntity: (newEntity: Omit<Entity, 'id' | 'description'>) => void;
+  fetchEntities: () => void;
 }
-
-const initialEntities: Entity[] = [
-    { id: '1', name: "Project Phoenix", description: "A next-generation platform for decentralized finance.", ownerEmail: "owner.phoenix@example.com" },
-    { id: '2', name: "CoE Desk", description: "Center of Excellence for blockchain initiatives.", ownerEmail: "owner.coe@example.com" },
-];
 
 const EntityContext = createContext<EntityContextType | undefined>(undefined);
 
 export function EntityProvider({ children }: { children: ReactNode }) {
-  const [entities, setEntities] = useState<Entity[]>(initialEntities);
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const { keycloak, initialized } = useKeycloak();
+  const { toast } = useToast();
 
-  const addEntity = (newEntity: Omit<Entity, 'id'>) => {
+  const fetchEntities = useCallback(async () => {
+    if (!initialized || !keycloak.token) {
+      return;
+    }
+    
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/`, {
+        headers: {
+          'Authorization': `Bearer ${keycloak.token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch entities');
+      }
+
+      const result = await response.json();
+      
+      const dataToProcess = result?.getEntityResponse?.data;
+
+      if (Array.isArray(dataToProcess)) {
+        const fetchedEntities = dataToProcess.map((item: any) => ({
+          id: item.id,
+          name: item.entity_name,
+          ownerEmail: item.admin_email,
+          description: '', 
+        }));
+        setEntities(fetchedEntities);
+      } else {
+        console.warn("Fetched data is not in the expected format:", result);
+        setEntities([]);
+      }
+
+    } catch (error) {
+      console.error("Failed to fetch entities:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Fetch Failed',
+        description: error instanceof Error ? error.message : 'An unknown error occurred while fetching entities.',
+      });
+      setEntities([]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized, keycloak.token, toast]);
+
+
+  useEffect(() => {
+    if (initialized && keycloak.token) {
+      fetchEntities();
+    }
+  }, [fetchEntities, initialized, keycloak.token]);
+
+  const addEntity = (newEntity: Omit<Entity, 'id' | 'description'>) => {
     const entityWithId: Entity = {
       id: `entity_${Date.now()}`,
+      description: '',
       ...newEntity,
     };
     setEntities(prev => [entityWithId, ...prev]);
   };
 
   return (
-    <EntityContext.Provider value={{ entities, addEntity }}>
+    <EntityContext.Provider value={{ entities, addEntity, fetchEntities }}>
       {children}
     </EntityContext.Provider>
   );

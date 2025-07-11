@@ -1,8 +1,10 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useKeycloak } from '@react-keycloak/web';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +16,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Form,
   FormControl,
@@ -28,30 +29,76 @@ import { useEntities } from '@/context/entity-context';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   ownerEmail: z.string().email({ message: "Please enter a valid email for the owner." }),
 });
 
 export function EntityCreationForm() {
   const { toast } = useToast();
-  const { addEntity } = useEntities();
+  const { fetchEntities } = useEntities();
+  const { keycloak } = useKeycloak();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      description: '',
       ownerEmail: '',
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    addEntity(values);
-    toast({
-      title: 'Entity Created',
-      description: `Entity ${values.name} has been successfully created.`,
-    });
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      toast({
+        variant: 'destructive',
+        title: 'Configuration Error',
+        description: 'The API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.',
+      });
+      return;
+    }
+
+    if (!keycloak.token) {
+       toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'Unable to get authentication token. Please log in again.',
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${keycloak.token}`
+        },
+        body: JSON.stringify({
+          entity: values.name,
+          adminEmail: values.ownerEmail,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to create entity. Please try again.' }));
+        throw new Error(errorData.message || 'An unknown error occurred.');
+      }
+
+      toast({
+        title: 'Entity Created',
+        description: `Entity ${values.name} has been successfully created.`,
+      });
+      
+      fetchEntities(); // Refresh the list of entities
+      form.reset();
+
+    } catch (error) {
+        console.error("Failed to create entity:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Creation Failed',
+          description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+    }
   }
 
   return (
@@ -73,19 +120,6 @@ export function EntityCreationForm() {
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Project Phoenix" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="A short description of the entity." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

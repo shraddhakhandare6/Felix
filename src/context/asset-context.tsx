@@ -1,38 +1,76 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface Asset {
+  asset_code: string;
   id: string;
   assetCode: string;
 }
 
 interface AssetContextType {
   assets: Asset[];
-  addAsset: (newAsset: Omit<Asset, 'id'>) => void;
+  refreshAssets: () => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
 }
-
-const initialAssets: Asset[] = [
-    { id: '1', assetCode: "USD" },
-    { id: '2', assetCode: "EUR" },
-];
 
 const AssetContext = createContext<AssetContextType | undefined>(undefined);
 
 export function AssetProvider({ children }: { children: ReactNode }) {
-  const [assets, setAssets] = useState<Asset[]>(initialAssets);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const addAsset = (newAsset: Omit<Asset, 'id'>) => {
-    const assetWithId: Asset = {
-      id: `asset_${Date.now()}`,
-      assetCode: newAsset.assetCode.toUpperCase(),
-    };
-    setAssets(prev => [assetWithId, ...prev]);
-  };
+  const refreshAssets = useCallback(async () => {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      console.error('API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
+      const parsedJson = await response.json();
+
+      if (parsedJson && Array.isArray(parsedJson.data[0].data)) {
+        const fetchedAssets = parsedJson.data[0].data
+          .map((asset: any) => ({
+            id: asset.id,
+            asset_code: asset.asset_code,
+            assetCode: asset.asset_code,
+          }))
+          .filter((asset: Asset) => asset.id && asset.asset_code);
+        
+        setAssets(prevAssets => {
+          const uniqueAssets = new Map<string, Asset>();
+          prevAssets.forEach(asset => uniqueAssets.set(asset.id, asset));
+          fetchedAssets.forEach((asset: Asset) => uniqueAssets.set(asset.id, asset));
+          return Array.from(uniqueAssets.values());
+        });
+      } else {
+        console.error('Failed to fetch assets, or response was empty or invalid.');
+      }
+
+    } catch (error) {
+      console.error('Failed to fetch assets:', error);
+      setError('Failed to fetch assets');
+      setAssets([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshAssets();
+  }, [refreshAssets]);
 
   return (
-    <AssetContext.Provider value={{ assets, addAsset }}>
+    <AssetContext.Provider value={{ assets, refreshAssets, isLoading, error }}>
       {children}
     </AssetContext.Provider>
   );

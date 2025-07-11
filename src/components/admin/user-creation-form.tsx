@@ -1,8 +1,10 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useKeycloak } from '@react-keycloak/web';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -33,30 +35,89 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlatformUsers } from '@/context/platform-users-context';
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email." }),
-  group: z.string({ required_error: "Please select a group." }),
+  firstName: z.string().min(1, { message: 'First name is required.' }),
+  lastName: z.string().min(1, { message: 'Last name is required.' }),
+  email: z.string().email({ message: 'Please enter a valid email.' }),
+  group: z.string({ required_error: 'Please select a group.' }),
 });
 
 export function UserCreationForm() {
   const { toast } = useToast();
-  const { addUser } = usePlatformUsers();
-  
+  const { fetchUsers } = usePlatformUsers();
+  const { keycloak } = useKeycloak();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
+      group: 'users',
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    addUser(values);
-    toast({
-      title: 'User Created',
-      description: `User ${values.name} has been successfully created.`,
-    });
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      toast({
+        variant: 'destructive',
+        title: 'Configuration Error',
+        description: 'The API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.',
+      });
+      return;
+    }
+
+    if (!keycloak.token) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'Unable to get authentication token. Please log in again.',
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${keycloak.token}`,
+        },
+        body: JSON.stringify({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          group: values.group
+        }),
+      });
+
+      const responseBody = await response.json();
+
+      if (!response.ok) {
+        // Use a more specific error message from the API if available
+        const errorMessage = responseBody?.message || responseBody?.meta?.message || 'An unknown error occurred.';
+        throw new Error(errorMessage);
+      }
+
+      const fullName = `${values.firstName} ${values.lastName}`;
+
+      toast({
+        title: 'User Created',
+        description: `User ${fullName} has been successfully created.`,
+      });
+
+      // Refetch the list to get the latest data from the server, including the new user.
+      fetchUsers();
+      form.reset();
+    } catch (error) {
+      // More detailed error logging
+      console.error('Failed to create user:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Creation Failed',
+        description: error instanceof Error ? error.message : 'An unknown error occurred.',
+      });
+    }
   }
 
   return (
@@ -65,19 +126,30 @@ export function UserCreationForm() {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardHeader>
             <CardTitle>Create User</CardTitle>
-            <CardDescription>
-              Create a new user and assign them to a group.
-            </CardDescription>
+            <CardDescription>Create a new user and assign them to a group.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>First Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="John" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Doe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,10 +181,7 @@ export function UserCreationForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Developers">Developers</SelectItem>
-                      <SelectItem value="QA">QA</SelectItem>
-                      <SelectItem value="DevOps">DevOps</SelectItem>
-                      <SelectItem value="Users">Users</SelectItem>
+                      <SelectItem value="users">users</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

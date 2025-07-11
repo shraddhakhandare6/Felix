@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -16,107 +17,149 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { CreateServiceDialog } from "@/components/dialogs/create-service-dialog";
+import { CreateOfferDialog } from "@/components/dialogs/create-offer-dialog";
 
-const services = [
-  {
-    name: "UX/UI Design Mockup",
-    description: "High-fidelity mockups for web and mobile apps.",
-    priceModel: "Fixed",
-    status: "Active",
-  },
-  {
-    name: "Backend API Endpoint",
-    description: "Develop and deploy a single API endpoint.",
-    priceModel: "Per Endpoint",
-    status: "Active",
-  },
-  {
-    name: "Technical Documentation",
-    description: "Create comprehensive technical docs for a project.",
-    priceModel: "Per Page",
-    status: "Active",
-  },
-  {
-    name: "1 Hour Consulting",
-    description: "Expert advice on blockchain technology.",
-    priceModel: "Hourly",
-    status: "Active",
-  },
-    {
-    name: "Code Review",
-    description: "Review up to 1,000 lines of code for quality.",
-    priceModel: "Fixed",
-    status: "Draft",
-  },
+const sellOffers = [
+  { service: "UX/UI Design Mockup", by: "CoE Desk", price: "250 BD", action: "Buy" },
+  { service: "Backend API Endpoint", by: "Project Alpha", price: "400 BD", action: "Buy" },
+  { service: "Technical Documentation", by: "Project Beta", price: "150 BD", action: "Buy" },
+];
+
+const buyOffers = [
+    { service: "Code Review", by: "user_123", price: "100 BD", action: "Sell" },
+    { service: "Database Optimization", by: "user_456", price: "300 BD", action: "Sell" },
+];
+
+const myOffers = [
+    { type: "Sell", service: "1 Hour Consulting", price: "100 BD", status: "Active" },
+    { type: "Buy", service: "Logo Design", price: "50 BD", status: "Active" },
 ]
 
 export default function MarketplacePage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-            <h1 className="text-3xl font-bold">Marketplace</h1>
-            <p className="text-muted-foreground mt-1">
-                Browse and manage the full list of services provided by your organization.
-            </p>
-        </div>
-        <CreateServiceDialog />
+        <h1 className="text-3xl font-bold">Marketplace</h1>
+        <CreateOfferDialog />
       </div>
 
-      <Card>
-        <CardHeader>
-            <CardTitle>Service Catalog</CardTitle>
-            <CardDescription>
-                This module enables you to define service offerings, configure pricing, and streamline service visibility. Advanced service and pricing management features will be introduced here.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
+      <Tabs defaultValue="sell-offers">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+          <TabsTrigger value="sell-offers">Services for Sale</TabsTrigger>
+          <TabsTrigger value="buy-offers">Services Wanted</TabsTrigger>
+          <TabsTrigger value="my-offers">My Offers</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sell-offers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Services for Sale</CardTitle>
+              <CardDescription>
+                Browse and buy services offered by other entities.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
                 <TableHeader>
-                    <TableRow>
-                        <TableHead>Service Name</TableHead>
-                        <TableHead className="w-[40%] hidden lg:table-cell">Description</TableHead>
-                        <TableHead className="hidden md:table-cell">Price Model</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
+                  <TableRow>
+                    <TableHead>Service</TableHead>
+                    <TableHead className="hidden md:table-cell">Offered By</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {services.map((service, index) => (
-                        <TableRow key={index}>
-                            <TableCell className="font-medium">{service.name}</TableCell>
-                            <TableCell className="text-muted-foreground text-sm hidden lg:table-cell">{service.description}</TableCell>
-                            <TableCell className="hidden md:table-cell">
-                               <Badge variant="outline">{service.priceModel}</Badge>
+                  {sellOffers.map((offer, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{offer.service}</TableCell>
+                      <TableCell className="hidden md:table-cell">{offer.by}</TableCell>
+                      <TableCell>{offer.price}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm">{offer.action}</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="buy-offers">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Services Wanted (Buy Offers)</CardTitle>
+                    <CardDescription>Fulfill these requests for services.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Service Needed</TableHead>
+                            <TableHead className="hidden md:table-cell">Requested By</TableHead>
+                            <TableHead>Offering Price</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        {buyOffers.map((offer, index) => (
+                            <TableRow key={index}>
+                            <TableCell className="font-medium">{offer.service}</TableCell>
+                            <TableCell className="hidden md:table-cell">{offer.by}</TableCell>
+                            <TableCell>{offer.price}</TableCell>
+                            <TableCell className="text-right">
+                                <Button variant="outline" size="sm">{offer.action}</Button>
                             </TableCell>
-                             <TableCell>
-                                <Badge variant={service.status === 'Active' ? 'success' : 'secondary'}>{service.status}</Badge>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+        <TabsContent value="my-offers">
+             <Card>
+                <CardHeader>
+                    <CardTitle>My Offers</CardTitle>
+                    <CardDescription>Manage your active buy and sell offers.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Service / Asset</TableHead>
+                            <TableHead className="hidden sm:table-cell">Price</TableHead>
+                            <TableHead className="hidden sm:table-cell">Status</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        {myOffers.map((offer, index) => (
+                            <TableRow key={index}>
+                            <TableCell>
+                                <Badge variant={offer.type === 'Sell' ? 'secondary' : 'default'}>{offer.type}</Badge>
+                            </TableCell>
+                            <TableCell className="font-medium">{offer.service}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{offer.price}</TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                               <Badge variant="outline">{offer.status}</Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                            <span className="sr-only">Open menu</span>
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                                        <DropdownMenuItem>View Offers</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground">Archive</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                <Button variant="destructive" size="sm">Cancel</Button>
                             </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </CardContent>
-      </Card>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+      </Tabs>
     </div>
   )
 }

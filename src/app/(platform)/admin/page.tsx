@@ -9,11 +9,17 @@ import { useEntities } from '@/context/entity-context';
 import { usePlatformUsers } from '@/context/platform-users-context';
 import { useAssets } from '@/context/asset-context';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
 
 export default function AdminPage() {
   const { users } = usePlatformUsers();
   const { entities } = useEntities();
-  const { assets } = useAssets();
+  const { assets, isLoading, error } = useAssets();
+  const router = useRouter();
+
+  const handleEntityClick = (entityId: string) => {
+    router.push(`/entity?entityId=${entityId}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -23,6 +29,7 @@ export default function AdminPage() {
           Create and manage users, entities, and assets within the platform.
         </p>
       </div>
+
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
         <UserCreationForm />
         <EntityCreationForm />
@@ -62,7 +69,7 @@ export default function AdminPage() {
         <Card>
           <CardHeader>
             <CardTitle>Managed Entities</CardTitle>
-             <CardDescription>The list of entities you have created.</CardDescription>
+            <CardDescription>The list of entities you have created.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -74,7 +81,7 @@ export default function AdminPage() {
               </TableHeader>
               <TableBody>
                 {entities.map((entity) => (
-                  <TableRow key={entity.id}>
+                  <TableRow key={entity.id} onClick={() => handleEntityClick(entity.id)} className="cursor-pointer">
                     <TableCell className="font-medium">{entity.name}</TableCell>
                     <TableCell>{entity.ownerEmail}</TableCell>
                   </TableRow>
@@ -87,26 +94,39 @@ export default function AdminPage() {
         <Card>
           <CardHeader>
             <CardTitle>Managed Assets</CardTitle>
-             <CardDescription>The list of assets you have created.</CardDescription>
+            <CardDescription>The list of assets you have created.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Asset Code</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assets.map((asset) => (
-                  <TableRow key={asset.id}>
-                    <TableCell className="font-medium">{asset.assetCode}</TableCell>
+            {/* Loading and Error States */}
+            {isLoading ? (
+              <div>Loading assets...</div>
+            ) : error ? (
+              <div>{error}</div>
+            ) : assets.length === 0 ? (
+              <div>No assets found.</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Asset Code</TableHead>
+                    <TableHead>Asset ID</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {assets.map((asset, index) => (
+                    <TableRow key={`${asset.id}-${index}`}> {/* Using a combination of asset.id and index */}
+                      <TableCell className="font-medium">{asset.asset_code}</TableCell>
+                      <TableCell>{asset.id}</TableCell> {/* Displaying Asset ID */}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
+
+
