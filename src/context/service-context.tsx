@@ -15,6 +15,7 @@ interface ServiceContextType {
   services: Service[];
   addService: (service: Service) => void;
   archiveService: (serviceName: string) => void;
+  updateService: (originalName: string, updatedService: Service) => void;
 }
 
 const initialServices: Service[] = [
@@ -67,8 +68,16 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const updateService = (originalName: string, updatedService: Service) => {
+    setServices((prevServices) =>
+      prevServices.map((service) =>
+        service.name === originalName ? updatedService : service
+      )
+    );
+  };
+
   return (
-    <ServiceContext.Provider value={{ services, addService, archiveService }}>
+    <ServiceContext.Provider value={{ services, addService, archiveService, updateService }}>
       {children}
     </ServiceContext.Provider>
   );
