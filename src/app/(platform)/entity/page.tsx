@@ -42,7 +42,7 @@ import { Badge } from "@/components/ui/badge"
 import { useEntities } from '@/context/entity-context';
 import { useServices } from '@/context/service-context';
 import { useToast } from '@/hooks/use-toast';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const addUserSchema = z.object({
   entity: z.string({ required_error: "Please select an entity." }),
@@ -60,6 +60,7 @@ function EntityManagementComponent() {
     const { toast } = useToast();
     const [mappedUsers, setMappedUsers] = useState(mappedUsersData);
     const searchParams = useSearchParams();
+    const router = useRouter();
     const entityId = searchParams.get('entityId');
 
     const form = useForm<z.infer<typeof addUserSchema>>({
@@ -75,6 +76,10 @@ function EntityManagementComponent() {
             form.setValue('entity', entityId);
         }
     }, [entityId, form]);
+    
+    const handleServiceClick = (serviceName: string) => {
+        router.push(`/services/${encodeURIComponent(serviceName)}`);
+    };
 
     function onAddUser(values: z.infer<typeof addUserSchema>) {
         const entityName = entities.find(e => e.id === values.entity)?.name || "Unknown Entity";
@@ -204,7 +209,7 @@ function EntityManagementComponent() {
                     </TableHeader>
                     <TableBody>
                         {services.filter(s => s.status === 'Active').map((service) => (
-                            <TableRow key={service.name}>
+                            <TableRow key={service.name} onClick={() => handleServiceClick(service.name)} className="cursor-pointer">
                                 <TableCell>{service.name}</TableCell>
                                 <TableCell>
                                      <Badge variant={service.status === 'Active' ? 'success' : 'secondary'}>{service.status}</Badge>
