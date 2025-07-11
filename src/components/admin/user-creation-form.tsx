@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -35,24 +34,24 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlatformUsers } from '@/context/platform-users-context';
 
 const formSchema = z.object({
-  firstName: z.string().min(1, { message: "First name is required." }),
-  lastName: z.string().min(1, { message: "Last name is required." }),
-  email: z.string().email({ message: "Please enter a valid email." }),
-  group: z.string({ required_error: "Please select a group." }),
+  firstName: z.string().min(1, { message: 'First name is required.' }),
+  lastName: z.string().min(1, { message: 'Last name is required.' }),
+  email: z.string().email({ message: 'Please enter a valid email.' }),
+  group: z.string({ required_error: 'Please select a group.' }),
 });
 
 export function UserCreationForm() {
   const { toast } = useToast();
   const { fetchUsers } = usePlatformUsers();
   const { keycloak } = useKeycloak();
-  
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
       email: '',
-      group: 'Users',
+      group: 'users',
     },
   });
 
@@ -66,9 +65,9 @@ export function UserCreationForm() {
       });
       return;
     }
-    
+
     if (!keycloak.token) {
-       toast({
+      toast({
         variant: 'destructive',
         title: 'Authentication Error',
         description: 'Unable to get authentication token. Please log in again.',
@@ -77,38 +76,46 @@ export function UserCreationForm() {
     }
 
     try {
-        const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/users`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${keycloak.token}`
-            },
-            body: JSON.stringify(values)
-        });
+      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${keycloak.token}`,
+        },
+        body: JSON.stringify({
+          firstname: values.firstName,
+          lastname: values.lastName,
+          email: values.email,
+          groups: [values.group]
+        }),
+      });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: 'Failed to create user. Please try again.' }));
-            throw new Error(errorData.message || 'An unknown error occurred.');
-        }
+      const responseBody = await response.json();
 
-        const fullName = `${values.firstName} ${values.lastName}`;
-        
-        toast({
-          title: 'User Created',
-          description: `User ${fullName} has been successfully created.`,
-        });
-        
-        // Refetch the list to get the latest data from the server, including the new user.
-        fetchUsers();
-        form.reset();
+      if (!response.ok) {
+        // Use a more specific error message from the API if available
+        const errorMessage = responseBody?.message || responseBody?.meta?.message || 'An unknown error occurred.';
+        throw new Error(errorMessage);
+      }
 
+      const fullName = `${values.firstName} ${values.lastName}`;
+
+      toast({
+        title: 'User Created',
+        description: `User ${fullName} has been successfully created.`,
+      });
+
+      // Refetch the list to get the latest data from the server, including the new user.
+      fetchUsers();
+      form.reset();
     } catch (error) {
-        console.error("Failed to create user:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Creation Failed',
-            description: error instanceof Error ? error.message : 'An unknown error occurred.',
-        });
+      // More detailed error logging
+      console.error('Failed to create user:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Creation Failed',
+        description: error instanceof Error ? error.message : 'An unknown error occurred.',
+      });
     }
   }
 
@@ -118,9 +125,7 @@ export function UserCreationForm() {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardHeader>
             <CardTitle>Create User</CardTitle>
-            <CardDescription>
-              Create a new user and assign them to a group.
-            </CardDescription>
+            <CardDescription>Create a new user and assign them to a group.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <FormField
@@ -136,7 +141,7 @@ export function UserCreationForm() {
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="lastName"
               render={({ field }) => (
@@ -175,7 +180,7 @@ export function UserCreationForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Users">Users</SelectItem>
+                      <SelectItem value="users">users</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
