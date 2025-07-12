@@ -103,7 +103,15 @@ function EntityManagementComponent() {
             return;
         }
 
-        const entityName = entities.find(e => e.id === values.entity)?.name || "Unknown Entity";
+        const entityName = entities.find(e => e.id === values.entity)?.name;
+        if (!entityName) {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Entity',
+                description: 'The selected entity could not be found.',
+            });
+            return;
+        }
 
         try {
             const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/member/add`, {
