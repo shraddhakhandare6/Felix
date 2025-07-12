@@ -43,6 +43,7 @@ import { useEntities } from '@/context/entity-context';
 import { useServices } from '@/context/service-context';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useKeycloak } from '@react-keycloak/web';
 
 const addUserSchema = z.object({
   entity: z.string({ required_error: "Please select an entity." }),
@@ -58,6 +59,7 @@ function EntityManagementComponent() {
     const { entities } = useEntities();
     const { services } = useServices();
     const { toast } = useToast();
+    const { keycloak } = useKeycloak();
     const [mappedUsers, setMappedUsers] = useState(mappedUsersData);
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -81,23 +83,73 @@ function EntityManagementComponent() {
         router.push(`/services/${encodeURIComponent(serviceName)}`);
     };
 
-    function onAddUser(values: z.infer<typeof addUserSchema>) {
+    async function onAddUser(values: z.infer<typeof addUserSchema>) {
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        if (!apiBaseUrl) {
+            toast({
+                variant: 'destructive',
+                title: 'Configuration Error',
+                description: 'The API endpoint is not configured.',
+            });
+            return;
+        }
+
+        if (!keycloak.token) {
+            toast({
+                variant: 'destructive',
+                title: 'Authentication Error',
+                description: 'Unable to get authentication token.',
+            });
+            return;
+        }
+
         const entityName = entities.find(e => e.id === values.entity)?.name || "Unknown Entity";
-        const newUser = {
-            id: `mapped_${Date.now()}`,
-            name: "New User", // In a real app, you might fetch this based on email
-            email: values.email,
-            entity: entityName,
-        };
-        setMappedUsers(prev => [...prev, newUser]);
-        toast({
-            title: "User Mapped",
-            description: `${values.email} has been mapped to ${entityName}.`,
-        });
-        form.reset({
-            email: "",
-            entity: entityId || undefined
-        });
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/member/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${keycloak.token}`
+                },
+                body: JSON.stringify({
+                    entity: entityName,
+                    email: values.email,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Failed to add entity member.' }));
+                throw new Error(errorData.message || 'An unknown error occurred.');
+            }
+
+            // If API call is successful, update the local state to reflect the change
+            const newUser = {
+                id: `mapped_${Date.now()}`,
+                name: "New User", // In a real app, you might fetch this based on email
+                email: values.email,
+                entity: entityName,
+            };
+            setMappedUsers(prev => [...prev, newUser]);
+
+            toast({
+                title: "User Mapped",
+                description: `${values.email} has been mapped to ${entityName}.`,
+            });
+            
+            form.reset({
+                email: "",
+                entity: entityId || values.entity
+            });
+
+        } catch (error) {
+            console.error("Failed to add entity member:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Mapping Failed',
+                description: error instanceof Error ? error.message : 'An unknown error occurred.',
+            });
+        }
     }
 
     function unmapUser(userId: string) {
