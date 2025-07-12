@@ -196,7 +196,7 @@ function DashboardPageContent() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {pendingIncoming.map((req) => (
+            {pendingIncoming.slice(0, 3).map((req) => (
               <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{req.amount}</div>
@@ -211,7 +211,7 @@ function DashboardPageContent() {
                 </div>
               </div>
             ))}
-             {pendingOutgoing.map((req) => (
+             {pendingOutgoing.slice(0, 3).map((req) => (
               <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary/70 p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{req.amount}</div>
