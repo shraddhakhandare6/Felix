@@ -160,14 +160,60 @@ function EntityManagementComponent() {
         }
     }
 
-    function unmapUser(userId: string) {
+    async function unmapUser(userId: string) {
         const userToUnmap = mappedUsers.find(u => u.id === userId);
-        setMappedUsers(prev => prev.filter(user => user.id !== userId));
-        if (userToUnmap) {
+        if (!userToUnmap) return;
+
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        if (!apiBaseUrl) {
+            toast({
+                variant: 'destructive',
+                title: 'Configuration Error',
+                description: 'The API endpoint is not configured.',
+            });
+            return;
+        }
+
+        if (!keycloak.token) {
+            toast({
+                variant: 'destructive',
+                title: 'Authentication Error',
+                description: 'Unable to get authentication token.',
+            });
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/member/remove`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${keycloak.token}`
+                },
+                body: JSON.stringify({
+                    entity: userToUnmap.entity,
+                    email: userToUnmap.email,
+                }),
+            });
+
+            if (!response.ok) {
+                 const errorData = await response.json().catch(() => ({ message: 'Failed to unmap entity member.' }));
+                throw new Error(errorData.message || 'An unknown error occurred.');
+            }
+
+            setMappedUsers(prev => prev.filter(user => user.id !== userId));
             toast({
                 title: "User Unmapped",
-                description: `${userToUnmap.email} has been unmapped.`,
+                description: `${userToUnmap.email} has been unmapped from ${userToUnmap.entity}.`,
                 variant: 'destructive'
+            });
+
+        } catch (error) {
+             console.error("Failed to unmap entity member:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Unmapping Failed',
+                description: error instanceof Error ? error.message : 'An unknown error occurred.',
             });
         }
     }
@@ -293,3 +339,5 @@ export default function EntityPage() {
         </Suspense>
     )
 }
+
+    
