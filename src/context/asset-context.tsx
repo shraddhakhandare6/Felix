@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -6,7 +7,6 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 export interface Asset {
   asset_code: string;
   id: string;
-  assetCode: string;
 }
 
 interface AssetContextType {
@@ -37,19 +37,17 @@ export function AssetProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
       const parsedJson = await response.json();
 
-      if (parsedJson && Array.isArray(parsedJson.data[0].data)) {
-        const fetchedAssets = parsedJson.data[0].data
+      if (parsedJson && parsedJson.data && Array.isArray(parsedJson.data)) {
+        const fetchedAssets = parsedJson.data
           .map((asset: any) => ({
             id: asset.id,
             asset_code: asset.asset_code,
-            assetCode: asset.asset_code,
           }))
           .filter((asset: Asset) => asset.id && asset.asset_code);
         
         setAssets(prevAssets => {
           const uniqueAssets = new Map<string, Asset>();
-          prevAssets.forEach(asset => uniqueAssets.set(asset.id, asset));
-          fetchedAssets.forEach((asset: Asset) => uniqueAssets.set(asset.id, asset));
+          [...prevAssets, ...fetchedAssets].forEach(asset => uniqueAssets.set(asset.id, asset));
           return Array.from(uniqueAssets.values());
         });
       } else {

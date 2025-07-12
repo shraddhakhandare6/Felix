@@ -97,7 +97,6 @@ export default function AdminPage() {
             <CardDescription>The list of assets you have created.</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Loading and Error States */}
             {isLoading ? (
               <div>Loading assets...</div>
             ) : error ? (
@@ -113,10 +112,10 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assets.map((asset, index) => (
-                    <TableRow key={`${asset.id}-${index}`}> {/* Using a combination of asset.id and index */}
+                  {assets.map((asset) => (
+                    <TableRow key={asset.id}>
                       <TableCell className="font-medium">{asset.asset_code}</TableCell>
-                      <TableCell>{asset.id}</TableCell> {/* Displaying Asset ID */}
+                      <TableCell>{asset.id}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
