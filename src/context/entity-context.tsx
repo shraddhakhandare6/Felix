@@ -73,7 +73,6 @@ export function EntityProvider({ children }: { children: ReactNode }) {
       });
       setEntities([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized, keycloak.token, toast]);
 
 
@@ -85,11 +84,11 @@ export function EntityProvider({ children }: { children: ReactNode }) {
 
   const addEntity = (newEntity: Omit<Entity, 'id' | 'description'>) => {
     const entityWithId: Entity = {
-      id: `entity_${Date.now()}`,
+      id: `temp_${Date.now()}`,
       description: '',
       ...newEntity,
     };
-    setEntities(prev => [entityWithId, ...prev]);
+    setEntities(prev => [entityWithId, ...prev.filter(e => !e.id.startsWith('temp_'))]);
   };
 
   return (

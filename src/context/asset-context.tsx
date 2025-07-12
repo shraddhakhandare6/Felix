@@ -11,6 +11,7 @@ export interface Asset {
 
 interface AssetContextType {
   assets: Asset[];
+  addAsset: (newAsset: Asset) => void;
   refreshAssets: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
@@ -56,11 +57,7 @@ export function AssetProvider({ children }: { children: ReactNode }) {
 
       setAssets(prevAssets => {
         const assetMap = new Map<string, Asset>();
-        // Add default assets first
         defaultAssets.forEach(asset => assetMap.set(asset.asset_code, asset));
-        // Then add previous assets
-        prevAssets.forEach(asset => assetMap.set(asset.asset_code, asset));
-        // Then add/overwrite with fetched assets
         fetchedAssets.forEach(asset => assetMap.set(asset.asset_code, asset));
         return Array.from(assetMap.values());
       });
@@ -68,7 +65,6 @@ export function AssetProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Failed to fetch assets:', err);
       setError('Failed to fetch assets');
-      // In case of error, fall back to default assets
       setAssets(defaultAssets);
     } finally {
       setIsLoading(false);
@@ -79,8 +75,12 @@ export function AssetProvider({ children }: { children: ReactNode }) {
     refreshAssets();
   }, [refreshAssets]);
 
+  const addAsset = (newAsset: Asset) => {
+    setAssets((prev) => [newAsset, ...prev.filter(asset => !asset.id.startsWith('temp_'))]);
+  };
+
   return (
-    <AssetContext.Provider value={{ assets, refreshAssets, isLoading, error }}>
+    <AssetContext.Provider value={{ assets, addAsset, refreshAssets, isLoading, error }}>
       {children}
     </AssetContext.Provider>
   );

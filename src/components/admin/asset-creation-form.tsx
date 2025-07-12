@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -31,7 +32,7 @@ const formSchema = z.object({
 
 export function AssetCreationForm() {
   const { toast } = useToast();
-  const { refreshAssets } = useAssets();
+  const { addAsset, refreshAssets } = useAssets();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,6 +51,12 @@ export function AssetCreationForm() {
       });
       return;
     }
+
+    addAsset({
+      asset_code: values.assetCode,
+      id: `temp_${Date.now()}`,
+    });
+    form.reset();
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/v1/assets/create`, {
@@ -77,9 +84,6 @@ export function AssetCreationForm() {
         title: 'Asset Created',
         description: `Asset ${newAsset.assetCode} has been successfully created.`,
       });
-      
-      refreshAssets();
-      form.reset();
 
     } catch (error) {
         console.error("Failed to create asset:", error);
@@ -88,6 +92,8 @@ export function AssetCreationForm() {
           title: 'Creation Failed',
           description: error instanceof Error ? error.message : 'An unknown error occurred.',
         });
+    } finally {
+        refreshAssets();
     }
   }
 
