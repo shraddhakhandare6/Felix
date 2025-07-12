@@ -80,6 +80,72 @@ function EntityManagementComponent() {
             form.setValue('entity', entityId);
         }
     }, [entityId, form]);
+
+    const selectedEntityId = form.watch('entity');
+
+    useEffect(() => {
+        const fetchMappedUsers = async () => {
+            if (!selectedEntityId || !keycloak.token) {
+                setMappedUsers([]);
+                return;
+            }
+
+            const entity = entities.find(e => e.id === selectedEntityId);
+            if (!entity) {
+                setMappedUsers([]);
+                return;
+            }
+
+            const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+            if (!apiBaseUrl) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Configuration Error',
+                    description: 'The API endpoint is not configured.',
+                });
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/${entity.name}/members/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${keycloak.token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch entity members.');
+                }
+
+                const result = await response.json();
+                const membersData = result?.getEntityResponse?.data;
+
+                if (Array.isArray(membersData)) {
+                    const fetchedUsers: MappedUser[] = membersData.map((member: any) => ({
+                        id: member.id,
+                        name: member.user_email.split('@')[0], // Simple name generation
+                        email: member.user_email,
+                        entity: member.entity_name,
+                    }));
+                    setMappedUsers(fetchedUsers);
+                } else {
+                    setMappedUsers([]);
+                }
+
+            } catch (error) {
+                console.error("Failed to fetch entity members:", error);
+                setMappedUsers([]); // Clear on error
+                toast({
+                    variant: 'destructive',
+                    title: 'Fetch Failed',
+                    description: 'Could not fetch members for the selected entity.',
+                });
+            }
+        };
+
+        fetchMappedUsers();
+    }, [selectedEntityId, entities, keycloak.token, toast]);
     
     const handleServiceClick = (serviceName: string) => {
         router.push(`/services/${encodeURIComponent(serviceName)}`);
@@ -133,10 +199,9 @@ function EntityManagementComponent() {
                 throw new Error(errorData.message || 'An unknown error occurred.');
             }
 
-            // If API call is successful, update the local state to reflect the change
             const newUser: MappedUser = {
                 id: `mapped_${Date.now()}`,
-                name: "New User", // In a real app, you might fetch this based on email
+                name: "New User", 
                 email: values.email,
                 entity: entityName,
             };
@@ -288,15 +353,23 @@ function EntityManagementComponent() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {mappedUsers.map((user) => (
-                            <TableRow key={user.id}>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>{user.entity}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="destructive" size="sm" onClick={() => unmapUser(user.id)}>Unmap</Button>
+                        {mappedUsers.length > 0 ? (
+                            mappedUsers.map((user) => (
+                                <TableRow key={user.id}>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>{user.entity}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="destructive" size="sm" onClick={() => unmapUser(user.id)}>Unmap</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                             <TableRow>
+                                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                    Select an entity to see its members.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )}
                     </TableBody>
                 </Table>
             </CardFooter>
