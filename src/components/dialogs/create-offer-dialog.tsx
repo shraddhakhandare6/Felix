@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -17,14 +18,46 @@ import { PlusCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useServices } from '@/context/service-context';
+import { useOffers, type Offer } from '@/context/offers-context';
+import { useToast } from '@/hooks/use-toast';
 
 export function CreateOfferDialog() {
   const [open, setOpen] = useState(false);
   const { services } = useServices();
+  const { addOffer } = useOffers();
+  const { toast } = useToast();
+
+  const [type, setType] = useState<'Sell' | 'Buy'>('Sell');
+  const [service, setService] = useState('');
+  const [price, setPrice] = useState('');
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log('Creating offer...');
+    if (!service || !price) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing fields',
+        description: 'Please select a service and enter a price.',
+      })
+      return;
+    }
+
+    const newOffer: Omit<Offer, 'id' | 'status'> = {
+      type,
+      service,
+      price: `${price} BD`,
+    };
+
+    addOffer(newOffer);
+    
+    toast({
+      title: 'Offer Created',
+      description: `Your ${type.toLowerCase()} offer for ${service} has been created.`,
+    })
+
+    // Reset form
+    setService('');
+    setPrice('');
     setOpen(false);
   };
 
@@ -46,13 +79,17 @@ export function CreateOfferDialog() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Type</Label>
-              <RadioGroup defaultValue="sell" className="col-span-3 flex gap-4">
+              <RadioGroup 
+                defaultValue="Sell" 
+                className="col-span-3 flex gap-4"
+                onValueChange={(value: 'Sell' | 'Buy') => setType(value)}
+              >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="sell" id="r1" />
+                  <RadioGroupItem value="Sell" id="r1" />
                   <Label htmlFor="r1">I want to sell</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="buy" id="r2" />
+                  <RadioGroupItem value="Buy" id="r2" />
                   <Label htmlFor="r2">I want to buy</Label>
                 </div>
               </RadioGroup>
@@ -61,12 +98,12 @@ export function CreateOfferDialog() {
               <Label htmlFor="service" className="text-right">
                 Service
               </Label>
-              <Select>
+              <Select onValueChange={setService} value={service}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a service" />
                 </SelectTrigger>
                 <SelectContent>
-                  {services.map((service) => (
+                  {services.filter(s => s.status === 'Active').map((service) => (
                     <SelectItem key={service.name} value={service.name}>
                       {service.name}
                     </SelectItem>
@@ -78,7 +115,14 @@ export function CreateOfferDialog() {
               <Label htmlFor="price" className="text-right">
                 Price (BD)
               </Label>
-              <Input id="price" type="number" placeholder="50.00" className="col-span-3" />
+              <Input 
+                id="price" 
+                type="number" 
+                placeholder="50.00" 
+                className="col-span-3" 
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>

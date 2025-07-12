@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, Suspense } from 'react';
@@ -21,23 +22,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { BadgeDollarSign, CreditCard } from "lucide-react"
 import { PageLoader } from '@/components/page-loader';
+import { useTransactions, type Transaction as TxType } from '@/context/transactions-context';
+
 
 const assets = [
   { name: "BlueDollars", code: "BD", balance: "10,430.50", icon: <BadgeDollarSign className="w-6 h-6 text-primary" /> },
   { name: "USDC", code: "USDC", balance: "500.00", icon: <CreditCard className="w-6 h-6 text-muted-foreground" /> },
 ]
 
-const allTransactions = [
-    { type: "Sent", details: "Payment to Project Gamma for API Development", amount: "-500.00 BD", date: "2025-07-04" },
-    { type: "Received", details: "Payment from CoE Desk for Consulting", amount: "+1,200.00 BD", date: "2025-07-03" },
-    { type: "Offer Match", details: "Bought 100 BD for 100 USDC", amount: "+100.00 BD", date: "2025-07-02" },
-    { type: "Offer Match", details: "Sold 100 USDC for 100 BD", amount: "-100.00 USDC", date: "2025-07-02" },
-    { type: "Issued", details: "Initial funding from Admin", amount: "+10,000.00 BD", date: "2025-07-01" },
-];
-
-type Transaction = typeof allTransactions[number];
-
-const TransactionTable = ({ transactions }: { transactions: Transaction[] }) => {
+const TransactionTable = ({ transactions }: { transactions: TxType[] }) => {
   if (!transactions.length) {
     return <p className="text-center text-muted-foreground py-8">No transactions to display for this category.</p>
   }
@@ -53,12 +46,12 @@ const TransactionTable = ({ transactions }: { transactions: Transaction[] }) => 
         </TableRow>
       </TableHeader>
       <TableBody>
-        {transactions.map((tx, index) => (
-          <TableRow key={index}>
+        {transactions.map((tx) => (
+          <TableRow key={tx.id}>
             <TableCell>
               <Badge variant={tx.type === "Sent" ? "destructive" : tx.type === "Received" ? "default" : "secondary"} className="capitalize">{tx.type}</Badge>
             </TableCell>
-            <TableCell>{tx.details}</TableCell>
+            <TableCell>{tx.service}</TableCell>
             <TableCell className="hidden md:table-cell">{tx.date}</TableCell>
             <TableCell className={`text-right font-mono ${tx.amount.startsWith('+') ? 'text-accent' : 'text-destructive'}`}>
               {tx.amount}
@@ -72,15 +65,16 @@ const TransactionTable = ({ transactions }: { transactions: Transaction[] }) => 
 
 function WalletPageContent() {
   const searchParams = useSearchParams();
+  const { transactions } = useTransactions();
   const nameFilter = searchParams.get('name');
 
   const filteredTransactions = useMemo(() => {
     if (!nameFilter) {
-      return allTransactions;
+      return transactions;
     }
     const lowerCaseFilter = nameFilter.toLowerCase();
-    return allTransactions.filter(tx => tx.details.toLowerCase().includes(lowerCaseFilter));
-  }, [nameFilter]);
+    return transactions.filter(tx => tx.recipient.toLowerCase().includes(lowerCaseFilter));
+  }, [nameFilter, transactions]);
 
   const sentTransactions = filteredTransactions.filter(tx => tx.type === 'Sent');
   const receivedTransactions = filteredTransactions.filter(tx => tx.type === 'Received' || tx.type === 'Issued');

@@ -27,6 +27,9 @@ import {
   ArrowDownLeft,
   BadgeDollarSign,
   PlusCircle,
+  Clock,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,33 +39,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { PageLoader } from '@/components/page-loader';
+import { useTransactions, type Transaction } from '@/context/transactions-context';
 
-const transactions = [
-  {
-    type: 'Sent',
-    icon: <ArrowUpRight className="h-4 w-4 text-destructive" />,
-    recipient: 'Project Gamma',
-    service: 'API Development',
-    amount: '-500 BD',
-    status: 'Completed',
-  },
-  {
-    type: 'Received',
-    icon: <ArrowDownLeft className="h-4 w-4 text-accent" />,
-    recipient: 'CoE Desk',
-    service: 'Consulting',
-    amount: '+1,200 BD',
-    status: 'Completed',
-  },
-  {
-    type: 'Sent',
-    icon: <ArrowUpRight className="h-4 w-4 text-destructive" />,
-    recipient: 'user@domain.com',
-    service: 'Design Assets',
-    amount: '-150 BD',
-    status: 'Pending',
-  },
-];
 
 function DashboardPageContent() {
   const { keycloak, initialized } = useKeycloak();
@@ -70,13 +48,18 @@ function DashboardPageContent() {
   const searchParams = useSearchParams();
   const { logout } = useAuth();
 
-  const { incomingRequests, payRequest, declineRequest } = usePaymentRequests();
+  const { incomingRequests, outgoingRequests, payRequest, declineRequest, cancelRequest } = usePaymentRequests();
+  const { transactions, addTransaction } = useTransactions();
   const { toast } = useToast();
-  const requests = incomingRequests.filter((req) => req.status === 'Pending');
+  
+  const pendingIncoming = incomingRequests.filter((req) => req.status === 'Pending');
+  const pendingOutgoing = outgoingRequests.filter((req) => req.status === 'Pending');
 
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
+
+  const recentTransactions = transactions.slice(0, 3);
 
   useEffect(() => {
     const recipientParam = searchParams.get('recipient');
@@ -85,7 +68,6 @@ function DashboardPageContent() {
     }
   }, [searchParams]);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (initialized && !keycloak?.authenticated) {
       keycloak.login();
@@ -101,6 +83,15 @@ function DashboardPageContent() {
       });
       return;
     }
+
+    const newTransaction: Omit<Transaction, 'id' | 'icon' | 'status' | 'date'> = {
+      type: 'Sent',
+      recipient: recipient,
+      service: memo || 'Quick Payment',
+      amount: `-${parseFloat(amount).toFixed(2)} BD`,
+    };
+
+    addTransaction(newTransaction);
 
     toast({
       title: 'Payment Sent',
@@ -201,11 +192,11 @@ function DashboardPageContent() {
           <CardHeader>
             <CardTitle>Pending Requests</CardTitle>
             <CardDescription>
-              Payment and multi-signature requests awaiting your action.
+              Awaiting your action or confirmation from others.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {requests.map((req) => (
+            {pendingIncoming.slice(0, 3).map((req) => (
               <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{req.amount}</div>
@@ -216,6 +207,23 @@ function DashboardPageContent() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground break-words">From {req.from}</div>
+                  <div className="text-xs text-muted-foreground break-words">For: {req.for}</div>
+                </div>
+              </div>
+            ))}
+             {pendingOutgoing.slice(0, 3).map((req) => (
+              <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary/70 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">{req.amount}</div>
+                   <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" className="cursor-default hover:bg-transparent pointer-events-none">
+                          <Clock className="w-4 h-4 mr-1"/> Pending
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => cancelRequest(req.id)}>Cancel</Button>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground break-words">To {req.to}</div>
                   <div className="text-xs text-muted-foreground break-words">For: {req.for}</div>
                 </div>
               </div>
@@ -242,10 +250,14 @@ function DashboardPageContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((tx, i) => (
-                  <TableRow key={i}>
+                {recentTransactions.map((tx) => (
+                  <TableRow key={tx.id}>
                     <TableCell className="flex items-center gap-2">
-                      {tx.icon} {tx.type}
+                      {tx.type === 'Sent' 
+                        ? <ArrowUpRight className="h-4 w-4 text-destructive" />
+                        : <ArrowDownLeft className="h-4 w-4 text-accent" />
+                      }
+                      {tx.type}
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{tx.recipient}</div>

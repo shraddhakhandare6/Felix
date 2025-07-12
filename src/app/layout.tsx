@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
@@ -12,6 +13,8 @@ import { EntityProvider } from '@/context/entity-context';
 import { PlatformUsersProvider } from '@/context/platform-users-context';
 import { AssetProvider } from '@/context/asset-context';
 import { ServiceProvider } from '@/context/service-context';
+import { TransactionsProvider } from '@/context/transactions-context';
+import { OffersProvider } from '@/context/offers-context';
 
 export const metadata: Metadata = {
   title: 'Felix - Blockchain Service & Wallet Platform',
@@ -46,9 +49,13 @@ export default function RootLayout({
                     <PlatformUsersProvider>
                       <AssetProvider>
                         <ServiceProvider>
-                          <AuthProvider>
-                            {children}
-                          </AuthProvider>
+                          <TransactionsProvider>
+                            <OffersProvider>
+                              <AuthProvider>
+                                {children}
+                              </AuthProvider>
+                            </OffersProvider>
+                          </TransactionsProvider>
                         </ServiceProvider>
                       </AssetProvider>
                     </PlatformUsersProvider>
