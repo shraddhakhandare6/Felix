@@ -50,17 +50,19 @@ const addUserSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
 });
 
-const mappedUsersData = [
-    { id: '1', name: "Alice Johnson", email: "alice.j@example.com", entity: "Project Phoenix" },
-    { id: '2', name: "Bob Williams", email: "bob.w@example.com", entity: "CoE Desk" },
-];
+interface MappedUser {
+    id: string;
+    name: string;
+    email: string;
+    entity: string;
+}
 
 function EntityManagementComponent() {
     const { entities } = useEntities();
     const { services } = useServices();
     const { toast } = useToast();
     const { keycloak } = useKeycloak();
-    const [mappedUsers, setMappedUsers] = useState(mappedUsersData);
+    const [mappedUsers, setMappedUsers] = useState<MappedUser[]>([]);
     const searchParams = useSearchParams();
     const router = useRouter();
     const entityId = searchParams.get('entityId');
@@ -132,7 +134,7 @@ function EntityManagementComponent() {
             }
 
             // If API call is successful, update the local state to reflect the change
-            const newUser = {
+            const newUser: MappedUser = {
                 id: `mapped_${Date.now()}`,
                 name: "New User", // In a real app, you might fetch this based on email
                 email: values.email,
