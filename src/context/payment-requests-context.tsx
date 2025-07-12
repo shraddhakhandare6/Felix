@@ -27,6 +27,12 @@ const initialIncomingRequests: Request[] = [
     { id: 'inc1', from: "Project Alpha", for: "UX Review", amount: "250 BD", status: "Pending", date: "2025-07-05" },
     { id: 'inc2', from: "member_two", for: "Asset Purchase", amount: "100 BD", status: "Pending", date: "2025-07-04" },
     { id: 'inc3', from: "CoE Desk", for: "Consulting Fee", amount: "1000 BD", status: "Paid", date: "2025-07-02" },
+    { id: 'inc4', from: 'Project Delta', for: 'Q3 Server Costs', amount: '850 BD', status: 'Pending', date: '2025-07-06' },
+    { id: 'inc5', from: 'member_four', for: 'Hardware procurement', amount: '1200 BD', status: 'Pending', date: '2025-07-06' },
+    { id: 'inc6', from: 'Service Department', for: 'Monthly license', amount: '50 BD', status: 'Pending', date: '2025-07-07' },
+    { id: 'inc7', from: 'External Contractor', for: 'Design work invoice #552', amount: '600 BD', status: 'Paid', date: '2025-07-01' },
+    { id: 'inc8', from: 'Project Epsilon', for: 'API usage charges', amount: '300 BD', status: 'Pending', date: '2025-07-08' },
+    { id: 'inc9', from: 'Finance Team', for: 'Budget advance', amount: '5000 BD', status: 'Pending', date: '2025-07-08' },
 ];
 
 const initialOutgoingRequests: Request[] = [

@@ -27,6 +27,9 @@ import {
   ArrowDownLeft,
   BadgeDollarSign,
   PlusCircle,
+  Clock,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,10 +48,12 @@ function DashboardPageContent() {
   const searchParams = useSearchParams();
   const { logout } = useAuth();
 
-  const { incomingRequests, payRequest, declineRequest } = usePaymentRequests();
+  const { incomingRequests, outgoingRequests, payRequest, declineRequest, cancelRequest } = usePaymentRequests();
   const { transactions, addTransaction } = useTransactions();
   const { toast } = useToast();
-  const requests = incomingRequests.filter((req) => req.status === 'Pending');
+  
+  const pendingIncoming = incomingRequests.filter((req) => req.status === 'Pending');
+  const pendingOutgoing = outgoingRequests.filter((req) => req.status === 'Pending');
 
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
@@ -79,7 +84,7 @@ function DashboardPageContent() {
       return;
     }
 
-    const newTransaction: Omit<Transaction, 'id' | 'icon' | 'status'> = {
+    const newTransaction: Omit<Transaction, 'id' | 'icon' | 'status' | 'date'> = {
       type: 'Sent',
       recipient: recipient,
       service: memo || 'Quick Payment',
@@ -187,11 +192,11 @@ function DashboardPageContent() {
           <CardHeader>
             <CardTitle>Pending Requests</CardTitle>
             <CardDescription>
-              Payment and multi-signature requests awaiting your action.
+              Awaiting your action or confirmation from others.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {requests.map((req) => (
+            {pendingIncoming.map((req) => (
               <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{req.amount}</div>
@@ -202,6 +207,23 @@ function DashboardPageContent() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground break-words">From {req.from}</div>
+                  <div className="text-xs text-muted-foreground break-words">For: {req.for}</div>
+                </div>
+              </div>
+            ))}
+             {pendingOutgoing.map((req) => (
+              <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary/70 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">{req.amount}</div>
+                   <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" className="cursor-default hover:bg-transparent">
+                          <Clock className="w-4 h-4 mr-1"/> Pending
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => cancelRequest(req.id)}>Cancel</Button>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground break-words">To {req.to}</div>
                   <div className="text-xs text-muted-foreground break-words">For: {req.for}</div>
                 </div>
               </div>
