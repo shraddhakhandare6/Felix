@@ -20,6 +20,7 @@ interface PaymentRequestsContextType {
   addRequest: (newRequest: Pick<Request, 'to' | 'for' | 'amount'>) => void;
   payRequest: (id: string) => void;
   declineRequest: (id: string) => void;
+  cancelRequest: (id: string) => void;
 }
 
 const initialIncomingRequests: Request[] = [
@@ -61,10 +62,14 @@ export function PaymentRequestsProvider({ children }: { children: ReactNode }) {
   const declineRequest = (id: string) => {
     setIncomingRequests(prev => prev.filter(req => req.id !== id));
   };
+  
+  const cancelRequest = (id: string) => {
+    setOutgoingRequests(prev => prev.filter(req => req.id !== id));
+  }
 
 
   return (
-    <PaymentRequestsContext.Provider value={{ incomingRequests, outgoingRequests, addRequest, payRequest, declineRequest }}>
+    <PaymentRequestsContext.Provider value={{ incomingRequests, outgoingRequests, addRequest, payRequest, declineRequest, cancelRequest }}>
       {children}
     </PaymentRequestsContext.Provider>
   );

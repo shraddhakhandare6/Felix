@@ -36,33 +36,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { PageLoader } from '@/components/page-loader';
+import { useTransactions, type Transaction } from '@/context/transactions-context';
 
-const transactions = [
-  {
-    type: 'Sent',
-    icon: <ArrowUpRight className="h-4 w-4 text-destructive" />,
-    recipient: 'Project Gamma',
-    service: 'API Development',
-    amount: '-500 BD',
-    status: 'Completed',
-  },
-  {
-    type: 'Received',
-    icon: <ArrowDownLeft className="h-4 w-4 text-accent" />,
-    recipient: 'CoE Desk',
-    service: 'Consulting',
-    amount: '+1,200 BD',
-    status: 'Completed',
-  },
-  {
-    type: 'Sent',
-    icon: <ArrowUpRight className="h-4 w-4 text-destructive" />,
-    recipient: 'user@domain.com',
-    service: 'Design Assets',
-    amount: '-150 BD',
-    status: 'Pending',
-  },
-];
 
 function DashboardPageContent() {
   const { keycloak, initialized } = useKeycloak();
@@ -71,12 +46,15 @@ function DashboardPageContent() {
   const { logout } = useAuth();
 
   const { incomingRequests, payRequest, declineRequest } = usePaymentRequests();
+  const { transactions, addTransaction } = useTransactions();
   const { toast } = useToast();
   const requests = incomingRequests.filter((req) => req.status === 'Pending');
 
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
+
+  const recentTransactions = transactions.slice(0, 3);
 
   useEffect(() => {
     const recipientParam = searchParams.get('recipient');
@@ -85,7 +63,6 @@ function DashboardPageContent() {
     }
   }, [searchParams]);
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (initialized && !keycloak?.authenticated) {
       keycloak.login();
@@ -101,6 +78,15 @@ function DashboardPageContent() {
       });
       return;
     }
+
+    const newTransaction: Omit<Transaction, 'id' | 'icon' | 'status'> = {
+      type: 'Sent',
+      recipient: recipient,
+      service: memo || 'Quick Payment',
+      amount: `-${parseFloat(amount).toFixed(2)} BD`,
+    };
+
+    addTransaction(newTransaction);
 
     toast({
       title: 'Payment Sent',
@@ -242,10 +228,14 @@ function DashboardPageContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((tx, i) => (
-                  <TableRow key={i}>
+                {recentTransactions.map((tx) => (
+                  <TableRow key={tx.id}>
                     <TableCell className="flex items-center gap-2">
-                      {tx.icon} {tx.type}
+                      {tx.type === 'Sent' 
+                        ? <ArrowUpRight className="h-4 w-4 text-destructive" />
+                        : <ArrowDownLeft className="h-4 w-4 text-accent" />
+                      }
+                      {tx.type}
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{tx.recipient}</div>

@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { CreateOfferDialog } from "@/components/dialogs/create-offer-dialog";
+import { useOffers } from "@/context/offers-context";
 
 const sellOffers = [
   { service: "UX/UI Design Mockup", by: "CoE Desk", price: "250 BD", action: "Buy" },
@@ -32,12 +33,9 @@ const buyOffers = [
     { service: "Database Optimization", by: "user_456", price: "300 BD", action: "Sell" },
 ];
 
-const myOffers = [
-    { type: "Sell", service: "1 Hour Consulting", price: "100 BD", status: "Active" },
-    { type: "Buy", service: "Logo Design", price: "50 BD", status: "Active" },
-]
-
 export default function MarketplacePage() {
+  const { myOffers, cancelOffer } = useOffers();
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -138,8 +136,8 @@ export default function MarketplacePage() {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {myOffers.map((offer, index) => (
-                            <TableRow key={index}>
+                        {myOffers.map((offer) => (
+                            <TableRow key={offer.id}>
                             <TableCell>
                                 <Badge variant={offer.type === 'Sell' ? 'secondary' : 'default'}>{offer.type}</Badge>
                             </TableCell>
@@ -149,7 +147,7 @@ export default function MarketplacePage() {
                                <Badge variant="outline">{offer.status}</Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                                <Button variant="destructive" size="sm">Cancel</Button>
+                                <Button variant="destructive" size="sm" onClick={() => cancelOffer(offer.id)}>Cancel</Button>
                             </TableCell>
                             </TableRow>
                         ))}

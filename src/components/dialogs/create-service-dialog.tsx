@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -16,13 +17,49 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useServices, type Service } from '@/context/service-context';
+import { useToast } from '@/hooks/use-toast';
+
+type PriceModel = "Fixed" | "Per Endpoint" | "Per Page" | "Hourly";
 
 export function CreateServiceDialog() {
   const [open, setOpen] = useState(false);
+  const { addService } = useServices();
+  const { toast } = useToast();
+
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [priceModel, setPriceModel] = useState<PriceModel | ''>('');
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log('Creating service...');
+    if (!name || !description || !priceModel) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing fields',
+        description: 'Please fill out all the fields to create a service.',
+      });
+      return;
+    }
+
+    const newService: Service = {
+      name,
+      description,
+      priceModel,
+      status: 'Active'
+    };
+    
+    addService(newService);
+
+    toast({
+      title: 'Service Created',
+      description: `The service "${name}" has been successfully created.`,
+    });
+
+    // Reset form and close
+    setName('');
+    setDescription('');
+    setPriceModel('');
     setOpen(false);
   };
 
@@ -46,27 +83,39 @@ export function CreateServiceDialog() {
               <Label htmlFor="name" className="text-right">
                 Name
               </Label>
-              <Input id="name" placeholder="e.g., UX/UI Design Mockup" className="col-span-3" />
+              <Input 
+                id="name" 
+                placeholder="e.g., UX/UI Design Mockup" 
+                className="col-span-3"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="description" className="text-right pt-2">
                 Description
               </Label>
-              <Textarea id="description" placeholder="Describe the service offering" className="col-span-3" />
+              <Textarea 
+                id="description" 
+                placeholder="Describe the service offering" 
+                className="col-span-3"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="price-model" className="text-right">
                 Price Model
               </Label>
-              <Select>
+              <Select onValueChange={(value: PriceModel) => setPriceModel(value)} value={priceModel}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixed">Fixed</SelectItem>
-                  <SelectItem value="hourly">Hourly</SelectItem>
-                  <SelectItem value="per-endpoint">Per Endpoint</SelectItem>
-                  <SelectItem value="per-page">Per Page</SelectItem>
+                  <SelectItem value="Fixed">Fixed</SelectItem>
+                  <SelectItem value="Hourly">Hourly</SelectItem>
+                  <SelectItem value="Per Endpoint">Per Endpoint</SelectItem>
+                  <SelectItem value="Per Page">Per Page</SelectItem>
                 </SelectContent>
               </Select>
             </div>

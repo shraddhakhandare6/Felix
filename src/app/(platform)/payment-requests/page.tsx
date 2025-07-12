@@ -22,15 +22,20 @@ import { Badge } from "@/components/ui/badge"
 import { CreateRequestDialog } from "@/components/dialogs/create-request-dialog";
 import { usePaymentRequests } from "@/context/payment-requests-context";
 import { BulkUploadDialog } from "@/components/dialogs/bulk-upload-dialog";
+import { DownloadDataDialog } from "@/components/dialogs/download-data-dialog";
 
 export default function PaymentRequestsPage() {
-  const { incomingRequests, outgoingRequests, payRequest, declineRequest } = usePaymentRequests();
+  const { incomingRequests, outgoingRequests, payRequest, declineRequest, cancelRequest } = usePaymentRequests();
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Payment Requests</h1>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <DownloadDataDialog 
+              incomingData={incomingRequests}
+              outgoingData={outgoingRequests}
+            />
             <BulkUploadDialog />
             <CreateRequestDialog />
         </div>
@@ -106,7 +111,7 @@ export default function PaymentRequestsPage() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         {req.status === "Pending" && (
-                                            <Button variant="destructive" size="sm">Cancel</Button>
+                                            <Button variant="destructive" size="sm" onClick={() => cancelRequest(req.id)}>Cancel</Button>
                                         )}
                                     </TableCell>
                                 </TableRow>
