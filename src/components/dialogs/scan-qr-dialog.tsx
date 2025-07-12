@@ -133,4 +133,3 @@ export function ScanQrDialog({ onScanSuccess }: { onScanSuccess: (decodedText: s
     </Dialog>
   );
 }
-
