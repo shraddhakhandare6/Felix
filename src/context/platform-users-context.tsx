@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -32,7 +33,6 @@ export function PlatformUsersProvider({ children }: { children: ReactNode }) {
     
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!apiBaseUrl) {
-      // Silently return if not configured, the form will show the error.
       return;
     }
 
@@ -54,7 +54,7 @@ export function PlatformUsersProvider({ children }: { children: ReactNode }) {
           id: user.id || user.email,
           name: `${user.firstname || ''} ${user.lastname || ''}`.trim(),
           email: user.email,
-          group: user.group || 'Users', // Default group if not provided
+          group: user.group || 'Users', 
         }));
         setUsers(fetchedUsers);
       } else {
@@ -80,10 +80,10 @@ export function PlatformUsersProvider({ children }: { children: ReactNode }) {
 
   const addUser = (newUser: Omit<PlatformUser, 'id'>) => {
     const userWithId: PlatformUser = {
-      id: `user_${Date.now()}`,
+      id: `temp_${Date.now()}`,
       ...newUser,
     };
-    setUsers(prev => [userWithId, ...prev]);
+    setUsers(prev => [userWithId, ...prev.filter(u => !u.id.startsWith('temp_'))]);
   };
 
   return (

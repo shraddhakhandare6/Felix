@@ -43,7 +43,7 @@ const formSchema = z.object({
 
 export function UserCreationForm() {
   const { toast } = useToast();
-  const { fetchUsers } = usePlatformUsers();
+  const { addUser, fetchUsers } = usePlatformUsers();
   const { keycloak } = useKeycloak();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -76,6 +76,13 @@ export function UserCreationForm() {
       return;
     }
 
+    addUser({
+        name: `${values.firstName} ${values.lastName}`,
+        email: values.email,
+        group: values.group,
+    });
+    form.reset();
+
     try {
       const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/users`, {
         method: 'POST',
@@ -94,7 +101,6 @@ export function UserCreationForm() {
       const responseBody = await response.json();
 
       if (!response.ok) {
-        // Use a more specific error message from the API if available
         const errorMessage = responseBody?.message || responseBody?.meta?.message || 'An unknown error occurred.';
         throw new Error(errorMessage);
       }
@@ -106,17 +112,15 @@ export function UserCreationForm() {
         description: `User ${fullName} has been successfully created.`,
       });
 
-      // Refetch the list to get the latest data from the server, including the new user.
-      fetchUsers();
-      form.reset();
     } catch (error) {
-      // More detailed error logging
       console.error('Failed to create user:', error);
       toast({
         variant: 'destructive',
         title: 'Creation Failed',
         description: error instanceof Error ? error.message : 'An unknown error occurred.',
       });
+    } finally {
+        fetchUsers();
     }
   }
 

@@ -34,7 +34,7 @@ const formSchema = z.object({
 
 export function EntityCreationForm() {
   const { toast } = useToast();
-  const { fetchEntities } = useEntities();
+  const { addEntity, fetchEntities } = useEntities();
   const { keycloak } = useKeycloak();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -65,6 +65,12 @@ export function EntityCreationForm() {
       return;
     }
 
+    addEntity({
+        name: values.name,
+        ownerEmail: values.ownerEmail,
+    });
+    form.reset();
+
     try {
       const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/create`, {
         method: 'POST',
@@ -87,9 +93,6 @@ export function EntityCreationForm() {
         title: 'Entity Created',
         description: `Entity ${values.name} has been successfully created.`,
       });
-      
-      fetchEntities(); // Refresh the list of entities
-      form.reset();
 
     } catch (error) {
         console.error("Failed to create entity:", error);
@@ -98,6 +101,8 @@ export function EntityCreationForm() {
           title: 'Creation Failed',
           description: error instanceof Error ? error.message : 'An unknown error occurred.',
         });
+    } finally {
+        fetchEntities();
     }
   }
 
