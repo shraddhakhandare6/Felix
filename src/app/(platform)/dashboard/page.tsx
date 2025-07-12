@@ -216,7 +216,7 @@ function DashboardPageContent() {
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{req.amount}</div>
                    <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" className="cursor-default hover:bg-transparent">
+                      <Button size="sm" variant="ghost" className="cursor-default hover:bg-transparent pointer-events-none">
                           <Clock className="w-4 h-4 mr-1"/> Pending
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => cancelRequest(req.id)}>Cancel</Button>
