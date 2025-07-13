@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -28,8 +29,8 @@ import {
 } from "@/components/ui/form"
 import { useUser } from '@/context/user-context';
 import { useToast } from '@/hooks/use-toast';
-import { useAccount } from '@/context/account-context';
-import { Copy } from 'lucide-react';
+import { useAccount, type Account } from '@/context/account-context';
+import { Copy, CheckCircle } from 'lucide-react';
 
 const profileFormSchema = z.object({
   username: z.string().min(2, {
@@ -44,6 +45,7 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [importKey, setImportKey] = useState("");
+  const [importedAccount, setImportedAccount] = useState<Account | null>(null);
   
   const { user, updateUser } = useUser();
   const { account, importAccount } = useAccount();
@@ -68,10 +70,10 @@ export default function AccountPage() {
 
   const handleImportSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const success = importAccount(importKey);
-    if (success) {
+    const result = importAccount(importKey);
+    if (result.success && result.account) {
+      setImportedAccount(result.account);
       setImportKey('');
-      setActiveTab('export');
     }
   };
 
@@ -263,6 +265,7 @@ export default function AccountPage() {
         </TabsContent>
         <TabsContent value="import">
             <Card>
+              {!importedAccount ? (
                 <form onSubmit={handleImportSubmit}>
                     <CardHeader>
                         <CardTitle>Import an Existing Stellar Account</CardTitle>
@@ -286,6 +289,48 @@ export default function AccountPage() {
                         <Button type="submit">Import Account</Button>
                     </CardFooter>
                 </form>
+              ) : (
+                <>
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <CheckCircle className="h-6 w-6 text-green-500" />
+                        Account Imported Successfully
+                      </CardTitle>
+                      <CardDescription>
+                        This account is now active in your session. You can view it on the "Export Account" tab.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div>
+                          <Label htmlFor="importedPublicKey">Imported Public Key</Label>
+                           <div className="relative">
+                              <Input id="importedPublicKey" readOnly value={importedAccount.publicKey} className="pr-10" />
+                              <Button 
+                                  type="button" 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                                  onClick={() => handleCopy(importedAccount.publicKey, 'Public Key')}
+                              >
+                                  <Copy className="h-4 w-4" />
+                                  <span className="sr-only">Copy Public Key</span>
+                              </Button>
+                          </div>
+                      </div>
+                      <div>
+                          <Label htmlFor="importedSecretKey">Imported Secret Key</Label>
+                           <div className="relative">
+                              <Input id="importedSecretKey" readOnly value={"S" + "•".repeat(55)} type="password" className="pr-10" />
+                          </div>
+                      </div>
+                  </CardContent>
+                  <CardFooter>
+                      <Button variant="outline" onClick={() => setImportedAccount(null)}>
+                          Import Another Account
+                      </Button>
+                  </CardFooter>
+                </>
+              )}
             </Card>
         </TabsContent>
       </Tabs>

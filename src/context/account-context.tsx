@@ -6,14 +6,19 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from './user-context';
 
-interface Account {
+export interface Account {
   publicKey: string;
   secretKey: string;
 }
 
+interface AccountImportResult {
+  success: boolean;
+  account?: Account;
+}
+
 interface AccountContextType {
   account: Account;
-  importAccount: (secretKey: string) => boolean;
+  importAccount: (secretKey: string) => AccountImportResult;
 }
 
 const initialAccount: Account = {
@@ -65,14 +70,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   }, [user.email]);
 
-  const importAccount = (secretKey: string): boolean => {
+  const importAccount = (secretKey: string): AccountImportResult => {
     if (!user.email) {
         toast({
             variant: "destructive",
             title: "User not identified",
             description: "Cannot import an account without a logged-in user.",
         });
-        return false;
+        return { success: false };
     }
 
     // Basic validation for a Stellar secret key
@@ -93,14 +98,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         title: "Account Imported",
         description: "Your Stellar account has been successfully imported.",
       });
-      return true;
+      return { success: true, account: newAccount };
     } else {
        toast({
         variant: "destructive",
         title: "Invalid Secret Key",
         description: "Please enter a valid Stellar secret key (it should start with 'S' and be 56 characters long).",
       });
-      return false;
+      return { success: false };
     }
   };
 
