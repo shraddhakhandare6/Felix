@@ -6,14 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Form,
@@ -30,7 +22,11 @@ const formSchema = z.object({
   assetCode: z.string().min(1, { message: "Asset code cannot be empty." }).max(12, { message: "Asset code cannot be longer than 12 characters." }),
 });
 
-export function AssetCreationForm() {
+interface AssetCreationFormProps {
+  onSuccess?: () => void;
+}
+
+export function AssetCreationForm({ onSuccess }: AssetCreationFormProps) {
   const { toast } = useToast();
   const { addAsset, refreshAssets } = useAssets();
 
@@ -84,6 +80,7 @@ export function AssetCreationForm() {
         title: 'Asset Created',
         description: `Asset ${newAsset.assetCode} has been successfully created.`,
       });
+      onSuccess?.();
 
     } catch (error) {
         console.error("Failed to create asset:", error);
@@ -98,35 +95,23 @@ export function AssetCreationForm() {
   }
 
   return (
-    <Card>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardHeader>
-            <CardTitle>Create Asset</CardTitle>
-            <CardDescription>
-              Define a new asset by providing an asset code.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FormField
-              control={form.control}
-              name="assetCode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Asset Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., BD, BTC" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter>
-            <Button type="submit">Create Asset</Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+        <FormField
+          control={form.control}
+          name="assetCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Asset Code</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., BD, BTC" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full">Create Asset</Button>
+      </form>
+    </Form>
   );
 }

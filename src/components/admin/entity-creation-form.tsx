@@ -7,14 +7,6 @@ import * as z from 'zod';
 import { useKeycloak } from '@react-keycloak/web';
 
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Form,
@@ -32,7 +24,11 @@ const formSchema = z.object({
   ownerEmail: z.string().email({ message: "Please enter a valid email for the owner." }),
 });
 
-export function EntityCreationForm() {
+interface EntityCreationFormProps {
+  onSuccess?: () => void;
+}
+
+export function EntityCreationForm({ onSuccess }: EntityCreationFormProps) {
   const { toast } = useToast();
   const { addEntity, fetchEntities } = useEntities();
   const { keycloak } = useKeycloak();
@@ -93,6 +89,7 @@ export function EntityCreationForm() {
         title: 'Entity Created',
         description: `Entity ${values.name} has been successfully created.`,
       });
+      onSuccess?.();
 
     } catch (error) {
         console.error("Failed to create entity:", error);
@@ -107,48 +104,36 @@ export function EntityCreationForm() {
   }
 
   return (
-    <Card>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardHeader>
-            <CardTitle>Create Entity</CardTitle>
-            <CardDescription>
-              Create a new entity like a project or a department.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Project Phoenix" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="ownerEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Entity Owner (Email)</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="owner@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter>
-            <Button type="submit">Create Entity</Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Project Phoenix" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="ownerEmail"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Entity Owner (Email)</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="owner@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full">Create Entity</Button>
+      </form>
+    </Form>
   );
 }

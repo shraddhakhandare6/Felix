@@ -1,21 +1,37 @@
+
 'use client';
 
+import { useState } from 'react';
 import { EntityCreationForm } from '@/components/admin/entity-creation-form';
 import { UserCreationForm } from '@/components/admin/user-creation-form';
 import { AssetCreationForm } from '@/components/admin/asset-creation-form';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useEntities } from '@/context/entity-context';
 import { usePlatformUsers } from '@/context/platform-users-context';
 import { useAssets } from '@/context/asset-context';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { PlusCircle } from 'lucide-react';
 
 export default function AdminPage() {
   const { users } = usePlatformUsers();
   const { entities } = useEntities();
   const { assets, isLoading, error } = useAssets();
   const router = useRouter();
+
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [isEntityDialogOpen, setIsEntityDialogOpen] = useState(false);
+  const [isAssetDialogOpen, setIsAssetDialogOpen] = useState(false);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 5;
+  const totalPages = Math.ceil(users.length / recordsPerPage);
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = users.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const handleEntityClick = (entityId: string) => {
     router.push(`/entity?entityId=${entityId}`);
@@ -31,13 +47,91 @@ export default function AdminPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        <UserCreationForm />
-        <EntityCreationForm />
-        <AssetCreationForm />
+        <Card>
+          <CardHeader>
+            <CardTitle>Create User</CardTitle>
+            <CardDescription>
+              Create a new user and assign them to a group.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => setIsUserDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create User
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Entity</CardTitle>
+            <CardDescription>
+              Create a new entity like a project or a department.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => setIsEntityDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Entity
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Asset</CardTitle>
+            <CardDescription>
+              Define a new asset by providing an asset code.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => setIsAssetDialogOpen(true)}>
+               <PlusCircle className="mr-2 h-4 w-4" />
+               Create Asset
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
 
+      <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create User</DialogTitle>
+            <DialogDescription>
+              Create a new user and assign them to a group.
+            </DialogDescription>
+          </DialogHeader>
+          <UserCreationForm onSuccess={() => setIsUserDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isEntityDialogOpen} onOpenChange={setIsEntityDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Entity</DialogTitle>
+            <DialogDescription>
+              Create a new entity like a project or a department.
+            </DialogDescription>
+          </DialogHeader>
+          <EntityCreationForm onSuccess={() => setIsEntityDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAssetDialogOpen} onOpenChange={setIsAssetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Asset</DialogTitle>
+            <DialogDescription>
+              Define a new asset by providing an asset code.
+            </DialogDescription>
+          </DialogHeader>
+          <AssetCreationForm onSuccess={() => setIsAssetDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Managed Users</CardTitle>
             <CardDescription>The list of users you have created.</CardDescription>
@@ -52,7 +146,7 @@ export default function AdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {currentRecords.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -64,6 +158,31 @@ export default function AdminPage() {
               </TableBody>
             </Table>
           </CardContent>
+           <CardFooter>
+            <div className="flex items-center justify-between w-full">
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
         </Card>
 
         <Card>
@@ -127,5 +246,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-
