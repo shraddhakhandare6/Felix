@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (initialized && keycloak && isKeycloakReady) {
       if (keycloak.authenticated) {
+        console.log("Keycloak Token Details:", keycloak.tokenParsed);
         if (!userProfile) {
           // Only fetch user profile if it's not already set
           keycloak.loadUserProfile().then(profile => {
