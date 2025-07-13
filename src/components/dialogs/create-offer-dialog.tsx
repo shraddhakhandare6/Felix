@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,15 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle } from 'lucide-react';
@@ -30,12 +20,9 @@ import { useServices } from '@/context/service-context';
 import { useOffers, type Offer } from '@/context/offers-context';
 import { useToast } from '@/hooks/use-toast';
 import { useEntities } from '@/context/entity-context';
-import Link from 'next/link';
 
 export function CreateOfferDialog() {
   const [open, setOpen] = useState(false);
-  const [isSuccessAlertOpen, setIsSuccessAlertOpen] = useState(false);
-  const [successResponse, setSuccessResponse] = useState<any>(null);
   
   const { services } = useServices();
   const { entities } = useEntities();
@@ -94,8 +81,11 @@ export function CreateOfferDialog() {
             throw new Error(result.message || `Failed to create ${type} offer.`);
         }
         
-        setSuccessResponse(result);
-        setIsSuccessAlertOpen(true);
+        toast({
+            variant: 'success',
+            title: 'Offer Submitted Successfully',
+            description: `Your ${type} offer has been processed.`,
+        });
         
         // Add to local state for UI update
         addOffer({
@@ -121,40 +111,8 @@ export function CreateOfferDialog() {
     setEmail('');
     setOpen(false);
   };
-  
-  const renderSuccessResponse = () => {
-    if (!successResponse || typeof successResponse !== 'object') {
-        return <p>Offer processed successfully.</p>;
-    }
-
-    return (
-        <div className="space-y-2 text-sm">
-        {Object.entries(successResponse).map(([key, value]) => {
-            const stringValue = String(value);
-            const isLink = stringValue.startsWith('http');
-
-            return (
-            <div key={key} className="grid grid-cols-3 gap-2">
-                <span className="font-semibold capitalize col-span-1">{key.replace(/_/g, ' ')}:</span>
-                <span className="col-span-2 break-all">
-                {isLink ? (
-                    <Link href={stringValue} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    {stringValue}
-                    </Link>
-                ) : (
-                    stringValue
-                )}
-                </span>
-            </div>
-            );
-        })}
-        </div>
-    );
-  };
-
 
   return (
-    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="w-full sm:w-auto">
@@ -282,24 +240,5 @@ export function CreateOfferDialog() {
         </form>
       </DialogContent>
     </Dialog>
-
-    <AlertDialog open={isSuccessAlertOpen} onOpenChange={setIsSuccessAlertOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Offer Submitted Successfully</AlertDialogTitle>
-            <AlertDialogDescription>
-                Your offer has been processed. Here are the details from the response:
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="my-4">
-                {renderSuccessResponse()}
-            </div>
-            <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setIsSuccessAlertOpen(false)}>Close</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-    </>
   );
 }
-
