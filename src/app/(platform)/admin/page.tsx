@@ -25,6 +25,13 @@ export default function AdminPage() {
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isEntityDialogOpen, setIsEntityDialogOpen] = useState(false);
   const [isAssetDialogOpen, setIsAssetDialogOpen] = useState(false);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 5;
+  const totalPages = Math.ceil(users.length / recordsPerPage);
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = users.slice(indexOfFirstRecord, indexOfLastRecord);
 
   const handleEntityClick = (entityId: string) => {
     router.push(`/entity?entityId=${entityId}`);
@@ -124,7 +131,7 @@ export default function AdminPage() {
 
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Managed Users</CardTitle>
             <CardDescription>The list of users you have created.</CardDescription>
@@ -139,7 +146,7 @@ export default function AdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {currentRecords.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -151,6 +158,31 @@ export default function AdminPage() {
               </TableBody>
             </Table>
           </CardContent>
+           <CardFooter>
+            <div className="flex items-center justify-between w-full">
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
         </Card>
 
         <Card>
