@@ -5,15 +5,29 @@ import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useKeycloak } from '@react-keycloak/web';
 import { useRouter, usePathname } from 'next/navigation';
-import type { KeycloakProfile } from 'keycloak-js';
+import type { KeycloakProfile, KeycloakTokenParsed } from 'keycloak-js';
 import { PageLoader } from '@/components/page-loader';
 import { useUser } from './user-context';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 
+// Extend the token parsed type to include expected role structures
+interface AppTokenParsed extends KeycloakTokenParsed {
+  resource_access?: {
+    [key: string]: {
+      roles: string[];
+    };
+  };
+  realm_access?: {
+    roles: string[];
+  };
+}
+
+
 interface AuthContextType {
   isAuthenticated: boolean;
   user: KeycloakProfile | null;
+  roles: string[];
   login: () => void;
   logout: () => void;
   loading: boolean;
@@ -28,6 +42,7 @@ const isPublicPage = (path: string) => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { keycloak, initialized } = useKeycloak();
   const [userProfile, setUserProfile] = useState<KeycloakProfile | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
   
   const router = useRouter();
   const pathname = usePathname();
@@ -46,10 +61,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (initialized && keycloak && isKeycloakReady) {
-      if (keycloak.authenticated) {
-        console.log("Keycloak Token Details:", keycloak.tokenParsed);
+      const tokenParsed: AppTokenParsed | undefined = keycloak.tokenParsed;
+      
+      if (keycloak.authenticated && tokenParsed) {
+        console.log("Keycloak Token Details:", tokenParsed);
+        
+        // Extract roles
+        const realmManagementRoles = tokenParsed.resource_access?.['realm-management']?.roles || [];
+        const realmRoles = tokenParsed.realm_access?.roles || [];
+        const allRoles = [...new Set([...realmManagementRoles, ...realmRoles])];
+        setRoles(allRoles);
+
         if (!userProfile) {
-          // Only fetch user profile if it's not already set
           keycloak.loadUserProfile().then(profile => {
             setUserProfile(profile);
             if (profile.username && profile.email) {
@@ -57,14 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           });
         }
-
-        // Redirect to dashboard if authenticated and on the login page
         if (pathname === '/login') {
           router.push('/dashboard');
         }
       } else {
         setUserProfile(null);
-        // Redirect to login page if not authenticated and not on a public page
+        setRoles([]);
         if (!isPublicPage(pathname)) {
           router.push('/login');
         }
@@ -82,7 +103,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return <PageLoader />;
   }
 
-  // If keycloak isn't configured, show an error message on protected pages.
   if (initialized && !isKeycloakReady && !isPublicPage(pathname)) {
       return (
         <div className="flex items-center justify-center min-h-screen bg-background">
@@ -101,13 +121,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         </div>);
   }
   
-  // After initialization, if we are not authenticated and not on a public page, show a loader while we redirect.
   if (isKeycloakReady && !keycloak.authenticated && !isPublicPage(pathname)) {
     return <PageLoader />;
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!keycloak.authenticated, user: userProfile, login, logout, loading: !initialized }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!keycloak.authenticated, user: userProfile, roles, login, logout, loading: !initialized }}>
       {children}
     </AuthContext.Provider>
   );
