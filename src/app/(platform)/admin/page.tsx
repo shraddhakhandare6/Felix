@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { EntityCreationForm } from '@/components/admin/entity-creation-form';
 import { UserCreationForm } from '@/components/admin/user-creation-form';
 import { AssetCreationForm } from '@/components/admin/asset-creation-form';
@@ -12,15 +13,17 @@ import { usePlatformUsers } from '@/context/platform-users-context';
 import { useAssets } from '@/context/asset-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { PlusCircle } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { PageLoader } from '@/components/page-loader';
 
 export default function AdminPage() {
   const { users } = usePlatformUsers();
   const { entities } = useEntities();
   const { assets, isLoading, error } = useAssets();
   const router = useRouter();
+  const { roles, loading: authLoading } = useAuth();
 
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isEntityDialogOpen, setIsEntityDialogOpen] = useState(false);
@@ -33,9 +36,22 @@ export default function AdminPage() {
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
   const currentRecords = users.slice(indexOfFirstRecord, indexOfLastRecord);
 
+  useEffect(() => {
+    if (!authLoading) {
+      const isAdmin = roles.includes('realm-admin');
+      if (!isAdmin) {
+        router.push('/dashboard');
+      }
+    }
+  }, [roles, authLoading, router]);
+
   const handleEntityClick = (entityId: string) => {
     router.push(`/entity?entityId=${entityId}`);
   };
+
+  if (authLoading || !roles.includes('realm-admin')) {
+    return <PageLoader />;
+  }
 
   return (
     <div className="space-y-6">

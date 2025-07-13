@@ -47,23 +47,41 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 
-const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/wallet', label: 'Wallet', icon: Wallet },
-  { href: '/services', label: 'Services', icon: ArrowLeftRight },
-  { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag },
-  { href: '/payment-requests', label: 'Payment Requests', icon: Send },
-  { href: '/contacts', label: 'Contacts', icon: Users },
-  { href: '/entity', label: 'Entity', icon: Briefcase },
-  { href: '/admin', label: 'Admin', icon: Shield },
-  { href: '/account', label: 'Account', icon: Settings },
+const allMenuItems = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['realm-admin', 'user'] },
+  { href: '/wallet', label: 'Wallet', icon: Wallet, roles: ['realm-admin', 'user'] },
+  { href: '/services', label: 'Services', icon: ArrowLeftRight, roles: ['realm-admin'] },
+  { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag, roles: ['realm-admin', 'user'] },
+  { href: '/payment-requests', label: 'Payment Requests', icon: Send, roles: ['realm-admin', 'user'] },
+  { href: '/contacts', label: 'Contacts', icon: Users, roles: ['realm-admin', 'user'] },
+  { href: '/entity', label: 'Entity', icon: Briefcase, roles: ['realm-admin'] },
+  { href: '/admin', label: 'Admin', icon: Shield, roles: ['realm-admin'] },
+  { href: '/account', label: 'Account', icon: Settings, roles: ['realm-admin', 'user'] },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { setTheme } = useTheme();
   const { user } = useUser();
-  const { logout } = useAuth();
+  const { logout, roles } = useAuth();
+  
+  const isAdmin = roles.includes('realm-admin');
+
+  const menuItems = allMenuItems.filter(item => {
+    if (item.roles.includes('realm-admin') && isAdmin) {
+      return true;
+    }
+    // A non-admin should see items that are not exclusive to admins.
+    // Let's assume for now that if a role is not 'realm-admin', it's a general user role.
+    if (!isAdmin && !item.roles.includes('realm-admin')) {
+      return true;
+    }
+    // A simple user role check
+    if (!isAdmin && item.roles.includes('user')) {
+      return true;
+    }
+    return false;
+  });
 
   const isDashboard = pathname === '/dashboard';
 
