@@ -62,18 +62,26 @@ export function CreateOfferDialog() {
         return;
     }
 
-    const offerPayload = {
+    const isBuyOffer = type === 'buy';
+    const apiUrl = isBuyOffer
+      ? 'http://localhost:5000/api/v1/offers/buy'
+      : 'http://localhost:5000/api/v1/offers/sell';
+
+    const basePayload = {
         creatorEmail: user.email,
         entityName: entityName,
-        otype: type,
         assetCode: "BD",
         amount: amount,
         price: price,
         serviceName: serviceName, 
     };
+    
+    const offerPayload = isBuyOffer 
+      ? { ...basePayload, otype: 'buy' }
+      : basePayload;
 
     try {
-        const response = await fetch('http://localhost:5000/api/v1/offers/sell', {
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -292,4 +300,3 @@ export function CreateOfferDialog() {
     </>
   );
 }
-
