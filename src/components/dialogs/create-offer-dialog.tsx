@@ -35,7 +35,7 @@ export function CreateOfferDialog() {
   const [serviceName, setServiceName] = useState('');
   const [price, setPrice] = useState('');
   const [amount, setAmount] = useState('');
-  const [entityName, setEntityName] = useState('');
+  const [entityName, setEntityName] = useState('kvb');
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -126,7 +126,7 @@ export function CreateOfferDialog() {
     setServiceName('');
     setPrice('');
     setAmount('');
-    setEntityName('');
+    setEntityName('kvb');
     setOpen(false);
   };
 
