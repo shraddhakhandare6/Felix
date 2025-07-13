@@ -30,7 +30,6 @@ import { useServices } from '@/context/service-context';
 import { useOffers, type Offer } from '@/context/offers-context';
 import { useToast } from '@/hooks/use-toast';
 import { useEntities } from '@/context/entity-context';
-import { useUser } from '@/context/user-context';
 import Link from 'next/link';
 
 export function CreateOfferDialog() {
@@ -40,7 +39,6 @@ export function CreateOfferDialog() {
   
   const { services } = useServices();
   const { entities } = useEntities();
-  const { user } = useUser();
   const { addOffer } = useOffers();
   const { toast } = useToast();
 
@@ -49,11 +47,12 @@ export function CreateOfferDialog() {
   const [price, setPrice] = useState('');
   const [amount, setAmount] = useState('');
   const [entityName, setEntityName] = useState('kvb');
+  const [email, setEmail] = useState('');
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     
-    if (!serviceName || !price || !amount || !entityName) {
+    if (!serviceName || !price || !amount || !entityName || !email) {
         toast({
             variant: 'destructive',
             title: 'Missing fields',
@@ -68,7 +67,7 @@ export function CreateOfferDialog() {
       : 'http://localhost:5000/api/v1/offers/sell';
 
     const basePayload = {
-        creatorEmail: user.email,
+        creatorEmail: email,
         entityName: entityName,
         assetCode: "BD",
         amount: amount,
@@ -119,6 +118,7 @@ export function CreateOfferDialog() {
     setPrice('');
     setAmount('');
     setEntityName('kvb');
+    setEmail('');
     setOpen(false);
   };
   
@@ -249,10 +249,12 @@ export function CreateOfferDialog() {
                 Email
                 </Label>
                 <Input 
-                id="email" 
-                readOnly
-                value={user.email}
-                className="col-span-3 bg-muted" 
+                  id="email" 
+                  type="email"
+                  placeholder="creator@example.com"
+                  className="col-span-3" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -300,3 +302,4 @@ export function CreateOfferDialog() {
     </>
   );
 }
+
