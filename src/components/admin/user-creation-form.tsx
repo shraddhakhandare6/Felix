@@ -7,14 +7,6 @@ import * as z from 'zod';
 import { useKeycloak } from '@react-keycloak/web';
 
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -41,7 +33,11 @@ const formSchema = z.object({
   group: z.string({ required_error: 'Please select a group.' }),
 });
 
-export function UserCreationForm() {
+interface UserCreationFormProps {
+  onSuccess?: () => void;
+}
+
+export function UserCreationForm({ onSuccess }: UserCreationFormProps) {
   const { toast } = useToast();
   const { addUser, fetchUsers } = usePlatformUsers();
   const { keycloak } = useKeycloak();
@@ -111,6 +107,7 @@ export function UserCreationForm() {
         title: 'User Created',
         description: `User ${fullName} has been successfully created.`,
       });
+      onSuccess?.();
 
     } catch (error) {
       console.error('Failed to create user:', error);
@@ -125,79 +122,69 @@ export function UserCreationForm() {
   }
 
   return (
-    <Card>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardHeader>
-            <CardTitle>Create User</CardTitle>
-            <CardDescription>Create a new user and assign them to a group.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="john.doe@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="group"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Group</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a group" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="users">users</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter>
-            <Button type="submit">Create User</Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+        <FormField
+          control={form.control}
+          name="firstName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>First Name</FormLabel>
+              <FormControl>
+                <Input placeholder="John" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="lastName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Last Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Doe" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="john.doe@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="group"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Group</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a group" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="users">users</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full">Create User</Button>
+      </form>
+    </Form>
   );
 }

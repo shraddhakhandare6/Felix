@@ -1,21 +1,30 @@
+
 'use client';
 
+import { useState } from 'react';
 import { EntityCreationForm } from '@/components/admin/entity-creation-form';
 import { UserCreationForm } from '@/components/admin/user-creation-form';
 import { AssetCreationForm } from '@/components/admin/asset-creation-form';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useEntities } from '@/context/entity-context';
 import { usePlatformUsers } from '@/context/platform-users-context';
 import { useAssets } from '@/context/asset-context';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { PlusCircle } from 'lucide-react';
 
 export default function AdminPage() {
   const { users } = usePlatformUsers();
   const { entities } = useEntities();
   const { assets, isLoading, error } = useAssets();
   const router = useRouter();
+
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [isEntityDialogOpen, setIsEntityDialogOpen] = useState(false);
+  const [isAssetDialogOpen, setIsAssetDialogOpen] = useState(false);
 
   const handleEntityClick = (entityId: string) => {
     router.push(`/entity?entityId=${entityId}`);
@@ -31,10 +40,88 @@ export default function AdminPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        <UserCreationForm />
-        <EntityCreationForm />
-        <AssetCreationForm />
+        <Card>
+          <CardHeader>
+            <CardTitle>Create User</CardTitle>
+            <CardDescription>
+              Create a new user and assign them to a group.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => setIsUserDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create User
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Entity</CardTitle>
+            <CardDescription>
+              Create a new entity like a project or a department.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => setIsEntityDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Create Entity
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Asset</CardTitle>
+            <CardDescription>
+              Define a new asset by providing an asset code.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => setIsAssetDialogOpen(true)}>
+               <PlusCircle className="mr-2 h-4 w-4" />
+               Create Asset
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
+
+      <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create User</DialogTitle>
+            <DialogDescription>
+              Create a new user and assign them to a group.
+            </DialogDescription>
+          </DialogHeader>
+          <UserCreationForm onSuccess={() => setIsUserDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isEntityDialogOpen} onOpenChange={setIsEntityDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Entity</DialogTitle>
+            <DialogDescription>
+              Create a new entity like a project or a department.
+            </DialogDescription>
+          </DialogHeader>
+          <EntityCreationForm onSuccess={() => setIsEntityDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAssetDialogOpen} onOpenChange={setIsAssetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Asset</DialogTitle>
+            <DialogDescription>
+              Define a new asset by providing an asset code.
+            </DialogDescription>
+          </DialogHeader>
+          <AssetCreationForm onSuccess={() => setIsAssetDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
         <Card>
@@ -127,5 +214,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-
