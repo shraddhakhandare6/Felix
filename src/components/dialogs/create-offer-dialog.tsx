@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -20,44 +19,96 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useServices } from '@/context/service-context';
 import { useOffers, type Offer } from '@/context/offers-context';
 import { useToast } from '@/hooks/use-toast';
+import { useEntities } from '@/context/entity-context';
 
 export function CreateOfferDialog() {
   const [open, setOpen] = useState(false);
+  
   const { services } = useServices();
+  const { entities } = useEntities();
   const { addOffer } = useOffers();
   const { toast } = useToast();
 
-  const [type, setType] = useState<'Sell' | 'Buy'>('Sell');
-  const [service, setService] = useState('');
+  const [type, setType] = useState<'sell' | 'buy'>('sell');
+  const [serviceName, setServiceName] = useState('');
   const [price, setPrice] = useState('');
+  const [amount, setAmount] = useState('');
+  const [entityName, setEntityName] = useState('kvb');
+  const [email, setEmail] = useState('');
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!service || !price) {
-      toast({
-        variant: 'destructive',
-        title: 'Missing fields',
-        description: 'Please select a service and enter a price.',
-      })
-      return;
+    
+    if (!serviceName || !price || !amount || !entityName || !email) {
+        toast({
+            variant: 'destructive',
+            title: 'Missing fields',
+            description: 'Please fill out all fields for the offer.',
+        });
+        return;
     }
 
-    const newOffer: Omit<Offer, 'id' | 'status'> = {
-      type,
-      service,
-      price: `${price} BD`,
+    const isBuyOffer = type === 'buy';
+    const apiUrl = isBuyOffer
+      ? 'http://localhost:5000/api/v1/offers/buy'
+      : 'http://localhost:5000/api/v1/offers/sell';
+
+    const basePayload = {
+        creatorEmail: email,
+        entityName: entityName,
+        assetCode: "BD",
+        amount: amount,
+        price: price,
+        serviceName: serviceName, 
     };
-
-    addOffer(newOffer);
     
-    toast({
-      title: 'Offer Created',
-      description: `Your ${type.toLowerCase()} offer for ${service} has been created.`,
-    })
+    const offerPayload = isBuyOffer 
+      ? { ...basePayload, otype: 'buy' }
+      : basePayload;
 
-    // Reset form
-    setService('');
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(offerPayload),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || `Failed to create ${type} offer.`);
+        }
+        
+        toast({
+            variant: 'success',
+            title: 'Offer Submitted Successfully',
+            description: `Your ${type} offer has been processed.`,
+        });
+        
+        // Add to local state for UI update
+        addOffer({
+          type: type === 'sell' ? 'Sell' : 'Buy',
+          service: serviceName,
+          price: `${price} BD`,
+        });
+
+    } catch (error) {
+        console.error(`Error creating ${type} offer:`, error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: error instanceof Error ? error.message : 'An unexpected error occurred.',
+        });
+    }
+
+    // Reset form and close dialog
+    setServiceName('');
     setPrice('');
+    setAmount('');
+    setEntityName('kvb');
+    setEmail('');
     setOpen(false);
   };
 
@@ -68,7 +119,7 @@ export function CreateOfferDialog() {
           <PlusCircle className="mr-2 h-4 w-4" /> Create Offer
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[480px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create a New Offer</DialogTitle>
@@ -80,25 +131,26 @@ export function CreateOfferDialog() {
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Type</Label>
               <RadioGroup 
-                defaultValue="Sell" 
+                value={type}
                 className="col-span-3 flex gap-4"
-                onValueChange={(value: 'Sell' | 'Buy') => setType(value)}
+                onValueChange={(value: 'sell' | 'buy') => setType(value)}
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Sell" id="r1" />
+                  <RadioGroupItem value="sell" id="r1" />
                   <Label htmlFor="r1">I want to sell</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Buy" id="r2" />
+                  <RadioGroupItem value="buy" id="r2" />
                   <Label htmlFor="r2">I want to buy</Label>
                 </div>
               </RadioGroup>
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="service" className="text-right">
                 Service
               </Label>
-              <Select onValueChange={setService} value={service}>
+              <Select onValueChange={setServiceName} value={serviceName}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a service" />
                 </SelectTrigger>
@@ -111,19 +163,76 @@ export function CreateOfferDialog() {
                 </SelectContent>
               </Select>
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
+            
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="price" className="text-right">
-                Price (BD)
+                Price
               </Label>
               <Input 
                 id="price" 
                 type="number" 
-                placeholder="50.00" 
+                placeholder="0.10" 
                 className="col-span-3" 
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
               />
             </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">
+                Amount
+                </Label>
+                <Input 
+                id="amount" 
+                type="number" 
+                placeholder="10" 
+                className="col-span-3" 
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="asset" className="text-right">
+                Asset
+                </Label>
+                <Input 
+                id="asset" 
+                readOnly
+                value="BD"
+                className="col-span-3 bg-muted" 
+                />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                Email
+                </Label>
+                <Input 
+                  id="email" 
+                  type="email"
+                  placeholder="creator@example.com"
+                  className="col-span-3" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="entity" className="text-right">
+                Entity Name
+                </Label>
+                <Select onValueChange={setEntityName} value={entityName}>
+                <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select an entity" />
+                </SelectTrigger>
+                <SelectContent>
+                    {entities.map((entity) => (
+                    <SelectItem key={entity.id} value={entity.name}>
+                        {entity.name}
+                    </SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+            </div>
+
           </div>
           <DialogFooter>
             <Button type="submit">Create Offer</Button>
@@ -133,3 +242,4 @@ export function CreateOfferDialog() {
     </Dialog>
   );
 }
+
