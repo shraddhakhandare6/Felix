@@ -7,7 +7,7 @@ import { UserCreationForm } from '@/components/admin/user-creation-form';
 import { AssetCreationForm } from '@/components/admin/asset-creation-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useEntities } from '@/context/entity-context';
+import { useEntities, type Entity } from '@/context/entity-context';
 import { usePlatformUsers, type PlatformUser } from '@/context/platform-users-context';
 import { useAssets } from '@/context/asset-context';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,12 @@ import { PlusCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { PageLoader } from '@/components/page-loader';
 import { IssueAssetDialog } from '@/components/dialogs/issue-asset-dialog';
+
+// A unified type for recipients to simplify dialog handling
+interface Recipient {
+  name: string;
+  email: string;
+}
 
 export default function AdminPage() {
   const { users } = usePlatformUsers();
@@ -29,14 +35,24 @@ export default function AdminPage() {
   const [isEntityDialogOpen, setIsEntityDialogOpen] = useState(false);
   const [isAssetDialogOpen, setIsAssetDialogOpen] = useState(false);
   const [isIssueAssetDialogOpen, setIsIssueAssetDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null);
+  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(null);
   
-  const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 5;
-  const totalPages = Math.ceil(users.length / recordsPerPage);
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = users.slice(indexOfFirstRecord, indexOfLastRecord);
+  // Pagination for Users
+  const [userCurrentPage, setUserCurrentPage] = useState(1);
+  const userRecordsPerPage = 5;
+  const userTotalPages = Math.ceil(users.length / userRecordsPerPage);
+  const userIndexOfLastRecord = userCurrentPage * userRecordsPerPage;
+  const userIndexOfFirstRecord = userIndexOfLastRecord - userRecordsPerPage;
+  const currentUserRecords = users.slice(userIndexOfFirstRecord, userIndexOfLastRecord);
+
+  // Pagination for Entities
+  const [entityCurrentPage, setEntityCurrentPage] = useState(1);
+  const entityRecordsPerPage = 5;
+  const entityTotalPages = Math.ceil(entities.length / entityRecordsPerPage);
+  const entityIndexOfLastRecord = entityCurrentPage * entityRecordsPerPage;
+  const entityIndexOfFirstRecord = entityIndexOfLastRecord - entityRecordsPerPage;
+  const currentEntityRecords = entities.slice(entityIndexOfFirstRecord, entityIndexOfLastRecord);
+
 
   useEffect(() => {
     if (!authLoading) {
@@ -51,8 +67,8 @@ export default function AdminPage() {
     router.push(`/entity?entityId=${entityId}`);
   };
 
-  const handleIssueAssetClick = (user: PlatformUser) => {
-    setSelectedUser(user);
+  const handleIssueAssetClick = (recipient: Recipient) => {
+    setSelectedRecipient(recipient);
     setIsIssueAssetDialogOpen(true);
   };
 
@@ -152,14 +168,13 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
       
-      {selectedUser && (
+      {selectedRecipient && (
         <IssueAssetDialog 
           open={isIssueAssetDialogOpen}
           onOpenChange={setIsIssueAssetDialogOpen}
-          user={selectedUser}
+          recipient={selectedRecipient}
         />
       )}
-
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -174,11 +189,11 @@ export default function AdminPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Group</TableHead>
-                  <TableHead className="text-right">Issue Asset</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentRecords.map((user) => (
+                {currentUserRecords.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -198,22 +213,22 @@ export default function AdminPage() {
            <CardFooter>
             <div className="flex items-center justify-between w-full">
               <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
+                Page {userCurrentPage} of {userTotalPages}
               </span>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => setUserCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={userCurrentPage === 1}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
+                  onClick={() => setUserCurrentPage((prev) => Math.min(prev + 1, userTotalPages))}
+                  disabled={userCurrentPage === userTotalPages}
                 >
                   Next
                 </Button>
@@ -232,19 +247,55 @@ export default function AdminPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Owner Email</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entities.map((entity) => (
-                  <TableRow key={entity.id} onClick={() => handleEntityClick(entity.id)} className="cursor-pointer">
-                    <TableCell className="font-medium">{entity.name}</TableCell>
+                {currentEntityRecords.map((entity) => (
+                  <TableRow key={entity.id}>
+                    <TableCell 
+                      className="font-medium cursor-pointer hover:underline"
+                      onClick={() => handleEntityClick(entity.id)}
+                    >
+                      {entity.name}
+                    </TableCell>
                     <TableCell>{entity.ownerEmail}</TableCell>
+                    <TableCell className="text-right">
+                       <Button variant="outline" size="sm" onClick={() => handleIssueAssetClick({ name: entity.name, email: entity.ownerEmail })}>
+                            Issue Asset
+                        </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </CardContent>
+          <CardFooter>
+            <div className="flex items-center justify-between w-full">
+                <span className="text-sm text-muted-foreground">
+                  Page {entityCurrentPage} of {entityTotalPages}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEntityCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={entityCurrentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEntityCurrentPage((prev) => Math.min(prev + 1, entityTotalPages))}
+                    disabled={entityCurrentPage === entityTotalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+          </CardFooter>
         </Card>
 
         <Card>

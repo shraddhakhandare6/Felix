@@ -31,7 +31,6 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAssets } from '@/context/asset-context';
-import { type PlatformUser } from '@/context/platform-users-context';
 import { useTransactions } from '@/context/transactions-context';
 
 const formSchema = z.object({
@@ -40,13 +39,18 @@ const formSchema = z.object({
   amount: z.string().min(1, { message: "Amount is required." }),
 });
 
+interface Recipient {
+  name: string;
+  email: string;
+}
+
 interface IssueAssetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: PlatformUser;
+  recipient: Recipient;
 }
 
-export function IssueAssetDialog({ open, onOpenChange, user }: IssueAssetDialogProps) {
+export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDialogProps) {
   const { toast } = useToast();
   const { assets } = useAssets();
   const { addTransaction } = useTransactions();
@@ -54,21 +58,21 @@ export function IssueAssetDialog({ open, onOpenChange, user }: IssueAssetDialogP
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      recipient: user.email,
+      recipient: recipient.email,
       assetCode: '',
       amount: '',
     },
   });
 
   useEffect(() => {
-    if (user) {
+    if (recipient) {
       form.reset({
-        recipient: user.email,
+        recipient: recipient.email,
         assetCode: '',
         amount: '',
       });
     }
-  }, [user, form, open]);
+  }, [recipient, form, open]);
 
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -91,9 +95,9 @@ export function IssueAssetDialog({ open, onOpenChange, user }: IssueAssetDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Issue Asset</DialogTitle>
+                <DialogTitle>Issue Asset to {recipient.name}</DialogTitle>
                 <DialogDescription>
-                    Issue a new asset directly to a user's account.
+                    Issue a new asset directly to the recipient's account.
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
