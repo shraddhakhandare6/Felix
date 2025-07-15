@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -176,8 +177,8 @@ export default function AdminPage() {
         />
       )}
 
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+        <Card>
           <CardHeader>
             <CardTitle>Managed Users</CardTitle>
             <CardDescription>The list of users you have created.</CardDescription>
@@ -298,7 +299,7 @@ export default function AdminPage() {
           </CardFooter>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Managed Assets</CardTitle>
             <CardDescription>The list of assets you have created.</CardDescription>
