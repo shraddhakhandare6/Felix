@@ -48,7 +48,7 @@ export default function AccountPage() {
   const [importedAccount, setImportedAccount] = useState<Account | null>(null);
   
   const { user, updateUser } = useUser();
-  const { account, importAccount } = useAccount();
+  const { account, importAccount, isLoading } = useAccount();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
@@ -204,13 +204,14 @@ export default function AccountPage() {
                         <div>
                             <Label htmlFor="publicKey">Public Key</Label>
                             <div className="relative">
-                                <Input id="publicKey" readOnly value={account.publicKey} className="pr-10" />
+                                <Input id="publicKey" readOnly value={isLoading ? 'Loading...' : account.publicKey} className="pr-10" />
                                 <Button 
                                     type="button" 
                                     size="icon" 
                                     variant="ghost" 
                                     className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
                                     onClick={() => handleCopy(account.publicKey, 'Public Key')}
+                                    disabled={isLoading}
                                 >
                                     <Copy className="h-4 w-4" />
                                     <span className="sr-only">Copy Public Key</span>
@@ -221,7 +222,7 @@ export default function AccountPage() {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="secretKeyInput">Secret Key</Label>
-                                <Button variant="outline" size="sm" onClick={() => setShowSecretKey(!showSecretKey)}>
+                                <Button variant="outline" size="sm" onClick={() => setShowSecretKey(!showSecretKey)} disabled={isLoading}>
                                     {showSecretKey ? 'Hide' : 'Show'}
                                 </Button>
                             </div>
@@ -229,7 +230,7 @@ export default function AccountPage() {
                                 <Input 
                                     id="secretKeyInput"
                                     readOnly 
-                                    value={showSecretKey ? account.secretKey : "S" + "•".repeat(55)} 
+                                    value={isLoading ? 'Loading...' : (showSecretKey ? account.secretKey : "S" + "•".repeat(55))} 
                                     type={showSecretKey ? "text" : "password"} 
                                     className="pr-10"
                                 />
@@ -239,6 +240,7 @@ export default function AccountPage() {
                                     variant="ghost" 
                                     className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
                                     onClick={() => handleCopy(account.secretKey, 'Secret Key')}
+                                    disabled={isLoading}
                                 >
                                     <Copy className="h-4 w-4" />
                                     <span className="sr-only">Copy Secret Key</span>
@@ -248,18 +250,22 @@ export default function AccountPage() {
                         </div>
                     </div>
                     <div className="flex flex-col items-center justify-center space-y-2 bg-secondary p-4 rounded-lg">
-                       <Image 
-                         src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${account.publicKey}`}
-                         alt="Stellar Account QR Code" 
-                         width={200} height={200}
-                         data-ai-hint="qr code"
-                         className="rounded-md w-full max-w-[200px] h-auto"
-                       />
+                       {isLoading ? (
+                         <div className="w-[200px] h-[200px] bg-muted animate-pulse rounded-md" />
+                       ) : (
+                         <Image 
+                           src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${account.publicKey}`}
+                           alt="Stellar Account QR Code" 
+                           width={200} height={200}
+                           data-ai-hint="qr code"
+                           className="rounded-md w-full max-w-[200px] h-auto"
+                         />
+                       )}
                        <p className="text-sm text-muted-foreground">Scan to get public key</p>
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button variant="secondary" onClick={handleDownloadBackup}>Download Backup</Button>
+                    <Button variant="secondary" onClick={handleDownloadBackup} disabled={isLoading}>Download Backup</Button>
                 </CardFooter>
             </Card>
         </TabsContent>
@@ -337,4 +343,3 @@ export default function AccountPage() {
     </div>
   )
 }
-
