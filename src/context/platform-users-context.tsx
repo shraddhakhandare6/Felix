@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
@@ -52,7 +51,7 @@ export function PlatformUsersProvider({ children }: { children: ReactNode }) {
       if (result.getAllRealmUsersResponse && result.getAllRealmUsersResponse.data) {
         const fetchedUsers = result.getAllRealmUsersResponse.data.map((user: any) => ({
           id: user.id || user.email,
-          name: `${user.firstname || ''} ${user.lastname || ''}`.trim(),
+          name: `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.email.split('@')[0],
           email: user.email,
           group: user.group || 'Users', 
         }));
