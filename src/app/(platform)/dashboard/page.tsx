@@ -10,7 +10,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,15 +20,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import {
   ArrowUpRight,
   ArrowDownLeft,
   BadgeDollarSign,
   PlusCircle,
   Clock,
-  CheckCircle,
-  XCircle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,7 +59,7 @@ function DashboardPageContent() {
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
 
-  const recentTransactions = transactions.slice(0, 3);
+  const recentTransactions = transactions.slice(0, 5);
 
   const isEntityOwner = useMemo(() => {
     if (!currentUser?.email || !entities) {
@@ -115,11 +111,7 @@ function DashboardPageContent() {
   };
 
   if (!initialized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg font-semibold">Initializing authentication...</p>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   const getUsername = () => {
@@ -130,6 +122,39 @@ function DashboardPageContent() {
     return preferredUsername;
   };
 
+  const QuickPaymentForm = () => (
+    <div className="space-y-4">
+        <div className="grid gap-2">
+            <Label htmlFor="recipient">Recipient</Label>
+            <Input 
+            id="recipient" 
+            placeholder="Stellar address or user@domain.com"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            />
+        </div>
+        <div className="grid gap-2">
+            <Label htmlFor="amount">Amount (BD)</Label>
+            <Input 
+            id="amount" 
+            type="number" 
+            placeholder="50.00" 
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            />
+        </div>
+        <div className="grid gap-2">
+            <Label htmlFor="memo">Memo (Optional)</Label>
+            <Input 
+            id="memo" 
+            placeholder="For service..."
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            />
+        </div>
+        <Button onClick={handleSendPayment} className="w-full">Send BlueDollars</Button>
+    </div>
+  );
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -144,61 +169,33 @@ function DashboardPageContent() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        
-        <Card className={isEntityOwner ? "lg:col-span-2" : "lg:col-span-3"}>
-           <CardHeader>
-            <CardTitle>Wallet Overview</CardTitle>
-            <CardDescription>
-              Your current balance and a quick way to send BlueDollars.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-             <div className="flex items-center gap-4 p-6 rounded-lg bg-primary/10">
-              <div className="p-3 rounded-full bg-primary text-primary-foreground">
-                <BadgeDollarSign className="w-8 h-8" />
+      {isEntityOwner ? (
+        // Layout for ENTITY OWNERS
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Wallet Overview</CardTitle>
+              <CardDescription>
+                Your current balance and a quick way to send BlueDollars.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center gap-4 p-6 rounded-lg bg-primary/10">
+                <div className="p-3 rounded-full bg-primary text-primary-foreground">
+                  <BadgeDollarSign className="w-8 h-8" />
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
+                  <div className="text-3xl font-bold">10,430.50 BD</div>
+                </div>
               </div>
-              <div>
-                <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
-                <div className="text-3xl font-bold">10,430.50 BD</div>
+              <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-medium">Quick Payment</h3>
+                  <QuickPaymentForm />
               </div>
-            </div>
-             <div className="space-y-4">
-                <h3 className="font-medium">Quick Payment</h3>
-                <div className="grid gap-2">
-                  <Label htmlFor="recipient">Recipient</Label>
-                  <Input 
-                    id="recipient" 
-                    placeholder="Stellar address or user@domain.com"
-                    value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="amount">Amount (BD)</Label>
-                  <Input 
-                    id="amount" 
-                    type="number" 
-                    placeholder="50.00" 
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="memo">Memo (Optional)</Label>
-                  <Input 
-                    id="memo" 
-                    placeholder="For service..."
-                    value={memo}
-                    onChange={(e) => setMemo(e.target.value)}
-                  />
-                </div>
-                <Button onClick={handleSendPayment}>Send BlueDollars</Button>
-             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {isEntityOwner && (
           <Card className="lg:col-span-1 h-fit">
             <CardHeader>
               <CardTitle>Pending Requests</CardTitle>
@@ -246,43 +243,108 @@ function DashboardPageContent() {
               </CreateRequestDialog>
             </CardContent>
           </Card>
-        )}
 
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Recent Transactions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Details</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentTransactions.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell className="flex items-center gap-2">
-                      {tx.type === 'Sent' 
-                        ? <ArrowUpRight className="h-4 w-4 text-destructive" />
-                        : <ArrowDownLeft className="h-4 w-4 text-accent" />
-                      }
-                      {tx.type}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{tx.recipient}</div>
-                      <div className="text-sm text-muted-foreground">{tx.service}</div>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{tx.amount}</TableCell>
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                </TableHeader>
+                <TableBody>
+                  {recentTransactions.map((tx) => (
+                    <TableRow key={tx.id}>
+                      <TableCell className="flex items-center gap-2">
+                        {tx.type === 'Sent' 
+                          ? <ArrowUpRight className="h-4 w-4 text-destructive" />
+                          : <ArrowDownLeft className="h-4 w-4 text-accent" />
+                        }
+                        {tx.type}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{tx.recipient}</div>
+                        <div className="text-sm text-muted-foreground">{tx.service}</div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">{tx.amount}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        // Layout for ADMINS and regular USERS
+        <>
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-full bg-primary text-primary-foreground">
+                            <BadgeDollarSign className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
+                            <div className="text-3xl font-bold">10,430.50 BD</div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Quick Payment</CardTitle>
+                        <CardDescription>A quick way to send BlueDollars.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <QuickPaymentForm />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Transactions</CardTitle>
+                        <CardDescription>Your latest account activity.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Details</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {recentTransactions.map((tx) => (
+                            <TableRow key={tx.id}>
+                                <TableCell className="flex items-center gap-2">
+                                {tx.type === 'Sent' 
+                                    ? <ArrowUpRight className="h-4 w-4 text-destructive" />
+                                    : <ArrowDownLeft className="h-4 w-4 text-accent" />
+                                }
+                                {tx.type}
+                                </TableCell>
+                                <TableCell>
+                                <div className="font-medium">{tx.recipient}</div>
+                                <div className="text-sm text-muted-foreground">{tx.service}</div>
+                                </TableCell>
+                                <TableCell className="text-right font-mono">{tx.amount}</TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+        </>
+      )}
     </div>
   );
 }
