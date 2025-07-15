@@ -19,56 +19,91 @@ interface AccountImportResult {
 interface AccountContextType {
   account: Account;
   importAccount: (secretKey: string) => AccountImportResult;
+  isLoading: boolean;
+  setAccount: (account: Account) => void;
 }
 
 const initialAccount: Account = {
-    // This will be replaced almost immediately, but good to have a default.
-    publicKey: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
-    secretKey: 'SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJNN',
+    publicKey: '',
+    secretKey: '',
 };
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
-// Helper function to generate a random Stellar-like key.
-const generateRandomKey = (prefix: 'G' | 'S'): string => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 55; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return prefix + result;
-};
-
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account>(initialAccount);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useUser();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!user.email) return; // Don't run if user isn't loaded yet
+    if (!user.email) return;
 
-    const storedAccount = localStorage.getItem(`stellar_account_${user.email}`);
-    if (storedAccount) {
-        try {
-            const parsedAccount = JSON.parse(storedAccount);
-            if (parsedAccount.publicKey && parsedAccount.secretKey) {
-                setAccount(parsedAccount);
+    const fetchAndSetAccount = async () => {
+        setIsLoading(true);
+        const storageKey = `stellar_account_${user.email}`;
+        const storedAccount = localStorage.getItem(storageKey);
+
+        if (storedAccount) {
+            try {
+                const parsedAccount = JSON.parse(storedAccount);
+                if (parsedAccount.publicKey && parsedAccount.secretKey) {
+                    setAccount(parsedAccount);
+                    setIsLoading(false);
+                    return;
+                }
+            } catch (error) {
+                console.error("Failed to parse account from localStorage:", error);
+                localStorage.removeItem(storageKey);
             }
-        } catch (error) {
-            console.error("Failed to parse account from localStorage:", error);
-            localStorage.removeItem(`stellar_account_${user.email}`);
         }
-    } else {
-        // In a real app, you would use a proper SDK to generate a keypair.
-        // For this prototype, we'll generate a new mock keypair.
-        const newPublicKey = generateRandomKey('G');
-        const newSecretKey = generateRandomKey('S');
-        const newUserAccount = { publicKey: newPublicKey, secretKey: newSecretKey };
         
-        setAccount(newUserAccount);
-        localStorage.setItem(`stellar_account_${user.email}`, JSON.stringify(newUserAccount));
-    }
-  }, [user.email]);
+        const apiBaseUrl = 'https://5000-firebase-felix-cashflow-1751957540178.cluster-htdgsbmflbdmov5xrjithceibm.cloudworkstations.dev';
+        if (!apiBaseUrl) {
+            toast({
+                variant: 'destructive',
+                title: 'Configuration Error',
+                description: 'The API endpoint is not configured.',
+            });
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/v1/wallets/export`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Failed to fetch wallet keys.' }));
+                throw new Error(errorData.message || 'An unknown error occurred.');
+            }
+
+            const data = await response.json();
+            const newAccount: Account = {
+                publicKey: data.public_key,
+                secretKey: data.secret,
+            };
+
+            setAccount(newAccount);
+            localStorage.setItem(storageKey, JSON.stringify(newAccount));
+            
+        } catch (error) {
+            console.error("Failed to fetch wallet keys:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Fetch Failed',
+                description: error instanceof Error ? error.message : 'Could not fetch wallet details.',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    fetchAndSetAccount();
+  }, [user.email, toast]);
 
   const importAccount = (secretKey: string): AccountImportResult => {
     if (!user.email) {
@@ -80,11 +115,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         return { success: false };
     }
 
-    // Basic validation for a Stellar secret key
     if (secretKey && secretKey.startsWith('S') && secretKey.length === 56) {
-      // In a real app, you would derive the public key from the secret key.
-      // For this prototype, we'll generate a new mock public key.
-      const newPublicKey = generateRandomKey('G');
+      const newPublicKey = 'G' + 'B'.repeat(55); // Mock public key for imported secret
       
       const newAccount = {
         publicKey: newPublicKey,
@@ -109,8 +141,15 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateAccountState = (newAccount: Account) => {
+    setAccount(newAccount);
+    if(user.email) {
+        localStorage.setItem(`stellar_account_${user.email}`, JSON.stringify(newAccount));
+    }
+  };
+
   return (
-    <AccountContext.Provider value={{ account, importAccount }}>
+    <AccountContext.Provider value={{ account, importAccount, isLoading, setAccount: updateAccountState }}>
       {children}
     </AccountContext.Provider>
   );
