@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useKeycloak } from '@react-keycloak/web';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -40,6 +40,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { PageLoader } from '@/components/page-loader';
 import { useTransactions, type Transaction } from '@/context/transactions-context';
+import { useUser } from '@/context/user-context';
+import { useEntities } from '@/context/entity-context';
 
 
 function DashboardPageContent() {
@@ -47,6 +49,8 @@ function DashboardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { logout } = useAuth();
+  const { user: currentUser } = useUser();
+  const { entities } = useEntities();
 
   const { incomingRequests, outgoingRequests, payRequest, declineRequest, cancelRequest } = usePaymentRequests();
   const { transactions, addTransaction } = useTransactions();
@@ -60,6 +64,13 @@ function DashboardPageContent() {
   const [memo, setMemo] = useState('');
 
   const recentTransactions = transactions.slice(0, 3);
+
+  const isEntityOwner = useMemo(() => {
+    if (!currentUser?.email || !entities) {
+      return false;
+    }
+    return entities.some(entity => entity.ownerEmail === currentUser.email);
+  }, [currentUser, entities]);
 
   useEffect(() => {
     const recipientParam = searchParams.get('recipient');
@@ -188,53 +199,55 @@ function DashboardPageContent() {
           </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending Requests</CardTitle>
-            <CardDescription>
-              Awaiting your action or confirmation from others.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {pendingIncoming.slice(0, 3).map((req) => (
-              <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary p-3">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">{req.amount}</div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => declineRequest(req.id)}>Decline</Button>
-                    <Button size="sm" onClick={() => payRequest(req.id)}>Approve</Button>
+        {isEntityOwner && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Requests</CardTitle>
+              <CardDescription>
+                Awaiting your action or confirmation from others.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {pendingIncoming.slice(0, 3).map((req) => (
+                <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">{req.amount}</div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => declineRequest(req.id)}>Decline</Button>
+                      <Button size="sm" onClick={() => payRequest(req.id)}>Approve</Button>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground break-words">From {req.from}</div>
+                    <div className="text-xs text-muted-foreground break-words">For: {req.for}</div>
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm text-muted-foreground break-words">From {req.from}</div>
-                  <div className="text-xs text-muted-foreground break-words">For: {req.for}</div>
-                </div>
-              </div>
-            ))}
-             {pendingOutgoing.slice(0, 3).map((req) => (
-              <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary/70 p-3">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">{req.amount}</div>
-                   <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" className="cursor-default hover:bg-transparent pointer-events-none">
-                          <Clock className="w-4 h-4 mr-1"/> Pending
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => cancelRequest(req.id)}>Cancel</Button>
+              ))}
+              {pendingOutgoing.slice(0, 3).map((req) => (
+                <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary/70 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">{req.amount}</div>
+                    <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" className="cursor-default hover:bg-transparent pointer-events-none">
+                            <Clock className="w-4 h-4 mr-1"/> Pending
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => cancelRequest(req.id)}>Cancel</Button>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground break-words">To {req.to}</div>
+                    <div className="text-xs text-muted-foreground break-words">For: {req.for}</div>
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm text-muted-foreground break-words">To {req.to}</div>
-                  <div className="text-xs text-muted-foreground break-words">For: {req.for}</div>
-                </div>
-              </div>
-            ))}
-            <CreateRequestDialog>
-              <Button variant="outline" className="w-full">
-                <PlusCircle className="mr-2 h-4 w-4" /> Create New Request
-              </Button>
-            </CreateRequestDialog>
-          </CardContent>
-        </Card>
+              ))}
+              <CreateRequestDialog>
+                <Button variant="outline" className="w-full">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Create New Request
+                </Button>
+              </CreateRequestDialog>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="lg:col-span-3">
           <CardHeader>
