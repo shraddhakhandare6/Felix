@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -42,12 +43,13 @@ const formSchema = z.object({
 interface Recipient {
   name: string;
   email: string;
+  isEntity: boolean;
 }
 
 interface IssueAssetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  recipient: Recipient;
+  recipient: Recipient | null;
 }
 
 export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDialogProps) {
@@ -58,8 +60,8 @@ export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDi
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      recipient: recipient.email,
-      assetCode: '',
+      recipient: recipient?.email || '',
+      assetCode: 'BD',
       amount: '',
     },
   });
@@ -68,28 +70,60 @@ export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDi
     if (recipient) {
       form.reset({
         recipient: recipient.email,
-        assetCode: '',
+        assetCode: 'BD',
         amount: '',
       });
     }
   }, [recipient, form, open]);
 
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    addTransaction({
-        type: 'Issued',
-        recipient: values.recipient,
-        service: `Asset Issuance: ${values.amount} ${values.assetCode}`,
-        amount: `+${values.amount} ${values.assetCode}`
-    });
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!recipient) return;
 
-    toast({
-      title: 'Asset Issued',
-      description: `Successfully issued ${values.amount} ${values.assetCode} to ${values.recipient}.`,
-      variant: 'success'
-    });
-    onOpenChange(false);
+    const apiBaseUrl = 'http://localhost:5000';
+    
+    try {
+        const response = await fetch(`${apiBaseUrl}/api/v1/wallets/issue`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                assetCode: values.assetCode,
+                recepient: values.recipient, // API expects 'recepient'
+                isEntity: recipient.isEntity,
+                amount: values.amount
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.meta?.message || 'Failed to issue asset.');
+        }
+        
+        addTransaction({
+            type: 'Issued',
+            recipient: values.recipient,
+            service: `Asset Issuance: ${values.amount} ${values.assetCode}`,
+            amount: `+${values.amount} ${values.assetCode}`
+        });
+
+        toast({
+          title: 'Asset Issued',
+          description: result.meta?.message || `Successfully issued ${values.amount} ${values.assetCode} to ${values.recipient}.`,
+          variant: 'success'
+        });
+        onOpenChange(false);
+
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Issuance Failed',
+            description: error instanceof Error ? error.message : 'An unknown error occurred.'
+        });
+    }
   }
+
+  if (!recipient) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

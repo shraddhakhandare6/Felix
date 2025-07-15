@@ -23,6 +23,7 @@ import { IssueAssetDialog } from '@/components/dialogs/issue-asset-dialog';
 interface Recipient {
   name: string;
   email: string;
+  isEntity: boolean;
 }
 
 export default function AdminPage() {
@@ -169,13 +170,13 @@ export default function AdminPage() {
         </DialogContent>
       </Dialog>
       
-      {selectedRecipient && (
-        <IssueAssetDialog 
-          open={isIssueAssetDialogOpen}
-          onOpenChange={setIsIssueAssetDialogOpen}
-          recipient={selectedRecipient}
-        />
-      )}
+      
+      <IssueAssetDialog 
+        open={isIssueAssetDialogOpen}
+        onOpenChange={setIsIssueAssetDialogOpen}
+        recipient={selectedRecipient}
+      />
+      
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         <Card>
@@ -202,7 +203,7 @@ export default function AdminPage() {
                       <Badge variant="outline">{user.group}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={() => handleIssueAssetClick(user)}>
+                        <Button variant="outline" size="sm" onClick={() => handleIssueAssetClick({ ...user, isEntity: false })}>
                             Issue Asset
                         </Button>
                     </TableCell>
@@ -263,7 +264,7 @@ export default function AdminPage() {
                     </TableCell>
                     <TableCell>{entity.ownerEmail}</TableCell>
                     <TableCell className="text-right">
-                       <Button variant="outline" size="sm" onClick={() => handleIssueAssetClick({ name: entity.name, email: entity.ownerEmail })}>
+                       <Button variant="outline" size="sm" onClick={() => handleIssueAssetClick({ name: entity.name, email: entity.ownerEmail, isEntity: true })}>
                             Issue Asset
                         </Button>
                     </TableCell>
