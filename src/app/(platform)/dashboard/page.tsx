@@ -144,16 +144,17 @@ function DashboardPageContent() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+        
+        <Card className={isEntityOwner ? "lg:col-span-2" : "lg:col-span-3"}>
+           <CardHeader>
             <CardTitle>Wallet Overview</CardTitle>
             <CardDescription>
-              Your current BlueDollars balance.
+              Your current balance and a quick way to send BlueDollars.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4 p-6 rounded-lg bg-primary/10">
+          <CardContent className="space-y-6">
+             <div className="flex items-center gap-4 p-6 rounded-lg bg-primary/10">
               <div className="p-3 rounded-full bg-primary text-primary-foreground">
                 <BadgeDollarSign className="w-8 h-8" />
               </div>
@@ -162,18 +163,8 @@ function DashboardPageContent() {
                 <div className="text-3xl font-bold">10,430.50 BD</div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="lg:col-span-2">
-           <CardHeader>
-            <CardTitle>Quick Payment</CardTitle>
-            <CardDescription>
-              Send BlueDollars to any user or address.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-             <div className="grid md:grid-cols-3 gap-4">
+             <div className="space-y-4">
+                <h3 className="font-medium">Quick Payment</h3>
                 <div className="grid gap-2">
                   <Label htmlFor="recipient">Recipient</Label>
                   <Input 
@@ -202,23 +193,21 @@ function DashboardPageContent() {
                     onChange={(e) => setMemo(e.target.value)}
                   />
                 </div>
+                <Button onClick={handleSendPayment}>Send BlueDollars</Button>
              </div>
           </CardContent>
-          <CardFooter>
-            <Button onClick={handleSendPayment}>Send BlueDollars</Button>
-          </CardFooter>
         </Card>
 
         {isEntityOwner && (
-          <Card className="lg:col-span-3">
+          <Card className="lg:col-span-1 h-fit">
             <CardHeader>
               <CardTitle>Pending Requests</CardTitle>
               <CardDescription>
                 Awaiting your action or confirmation from others.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {pendingIncoming.slice(0, 3).map((req) => (
+            <CardContent className="space-y-4 max-h-[450px] overflow-y-auto">
+              {pendingIncoming.map((req) => (
                 <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary p-3">
                   <div className="flex items-center justify-between">
                     <div className="font-medium">{req.amount}</div>
@@ -233,7 +222,7 @@ function DashboardPageContent() {
                   </div>
                 </div>
               ))}
-              {pendingOutgoing.slice(0, 3).map((req) => (
+              {pendingOutgoing.map((req) => (
                 <div key={req.id} className="flex flex-col gap-3 rounded-lg bg-secondary/70 p-3">
                   <div className="flex items-center justify-between">
                     <div className="font-medium">{req.amount}</div>
@@ -251,7 +240,7 @@ function DashboardPageContent() {
                 </div>
               ))}
               <CreateRequestDialog>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full mt-2">
                   <PlusCircle className="mr-2 h-4 w-4" /> Create New Request
                 </Button>
               </CreateRequestDialog>
