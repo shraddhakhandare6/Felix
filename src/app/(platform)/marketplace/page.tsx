@@ -32,7 +32,7 @@ interface OfferDetails {
   action: 'Buy' | 'Sell';
 }
 
-const sellOffers = [
+const initialSellOffers = [
   { service: "UX/UI Design Mockup", by: "CoE Desk", price: "250 BD", action: "Buy" as const },
   { service: "Backend API Endpoint", by: "Project Alpha", price: "400 BD", action: "Buy" as const },
   { service: "Technical Documentation", by: "Project Beta", price: "150 BD", action: "Buy" as const },
@@ -45,6 +45,7 @@ const buyOffers = [
 
 export default function MarketplacePage() {
   const { myOffers, cancelOffer } = useOffers();
+  const [sellOffers, setSellOffers] = useState(initialSellOffers);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<OfferDetails | null>(null);
   const { toast } = useToast();
@@ -61,6 +62,10 @@ export default function MarketplacePage() {
         description: `You have successfully agreed to ${selectedOffer.action.toLowerCase()} "${selectedOffer.service}" for ${selectedOffer.price}.`,
         variant: 'success',
       });
+      
+      if (selectedOffer.action === 'Buy') {
+        setSellOffers(prevOffers => prevOffers.filter(offer => offer.service !== selectedOffer.service));
+      }
     }
     setIsConfirmOpen(false);
     setSelectedOffer(null);
@@ -100,16 +105,24 @@ export default function MarketplacePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sellOffers.map((offer, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{offer.service}</TableCell>
-                        <TableCell className="hidden md:table-cell">{offer.by}</TableCell>
-                        <TableCell>{offer.price}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="outline" size="sm" onClick={() => handleOfferClick(offer)}>{offer.action}</Button>
+                    {sellOffers.length > 0 ? (
+                      sellOffers.map((offer, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{offer.service}</TableCell>
+                          <TableCell className="hidden md:table-cell">{offer.by}</TableCell>
+                          <TableCell>{offer.price}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm" onClick={() => handleOfferClick(offer)}>{offer.action}</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
+                          No services currently for sale.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
