@@ -145,14 +145,14 @@ function DashboardPageContent() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle>Wallet Overview</CardTitle>
             <CardDescription>
-              Your current balance and a quick way to send BlueDollars.
+              Your current BlueDollars balance.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-8">
+          <CardContent>
             <div className="flex items-center gap-4 p-6 rounded-lg bg-primary/10">
               <div className="p-3 rounded-full bg-primary text-primary-foreground">
                 <BadgeDollarSign className="w-8 h-8" />
@@ -162,37 +162,47 @@ function DashboardPageContent() {
                 <div className="text-3xl font-bold">10,430.50 BD</div>
               </div>
             </div>
-            <div className="space-y-4">
-              <h3 className="font-semibold text-md">Quick Payment</h3>
-              <div className="grid gap-2">
-                <Label htmlFor="recipient">Recipient</Label>
-                <Input 
-                  id="recipient" 
-                  placeholder="Stellar address or user@domain.com"
-                  value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="amount">Amount (BD)</Label>
-                <Input 
-                  id="amount" 
-                  type="number" 
-                  placeholder="50.00" 
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="memo">Memo (Optional)</Label>
-                <Input 
-                  id="memo" 
-                  placeholder="For service..."
-                  value={memo}
-                  onChange={(e) => setMemo(e.target.value)}
-                />
-              </div>
-            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="lg:col-span-2">
+           <CardHeader>
+            <CardTitle>Quick Payment</CardTitle>
+            <CardDescription>
+              Send BlueDollars to any user or address.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+             <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="recipient">Recipient</Label>
+                  <Input 
+                    id="recipient" 
+                    placeholder="Stellar address or user@domain.com"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="amount">Amount (BD)</Label>
+                  <Input 
+                    id="amount" 
+                    type="number" 
+                    placeholder="50.00" 
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="memo">Memo (Optional)</Label>
+                  <Input 
+                    id="memo" 
+                    placeholder="For service..."
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                  />
+                </div>
+             </div>
           </CardContent>
           <CardFooter>
             <Button onClick={handleSendPayment}>Send BlueDollars</Button>
@@ -200,7 +210,7 @@ function DashboardPageContent() {
         </Card>
 
         {isEntityOwner && (
-          <Card>
+          <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle>Pending Requests</CardTitle>
               <CardDescription>
