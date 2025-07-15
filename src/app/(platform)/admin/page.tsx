@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { AssetCreationForm } from '@/components/admin/asset-creation-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useEntities } from '@/context/entity-context';
-import { usePlatformUsers } from '@/context/platform-users-context';
+import { usePlatformUsers, type PlatformUser } from '@/context/platform-users-context';
 import { useAssets } from '@/context/asset-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { PlusCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { PageLoader } from '@/components/page-loader';
+import { IssueAssetDialog } from '@/components/dialogs/issue-asset-dialog';
 
 export default function AdminPage() {
   const { users } = usePlatformUsers();
@@ -28,6 +28,8 @@ export default function AdminPage() {
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isEntityDialogOpen, setIsEntityDialogOpen] = useState(false);
   const [isAssetDialogOpen, setIsAssetDialogOpen] = useState(false);
+  const [isIssueAssetDialogOpen, setIsIssueAssetDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
@@ -47,6 +49,11 @@ export default function AdminPage() {
 
   const handleEntityClick = (entityId: string) => {
     router.push(`/entity?entityId=${entityId}`);
+  };
+
+  const handleIssueAssetClick = (user: PlatformUser) => {
+    setSelectedUser(user);
+    setIsIssueAssetDialogOpen(true);
   };
 
   if (authLoading || !roles.includes('realm-admin')) {
@@ -144,6 +151,14 @@ export default function AdminPage() {
           <AssetCreationForm onSuccess={() => setIsAssetDialogOpen(false)} />
         </DialogContent>
       </Dialog>
+      
+      {selectedUser && (
+        <IssueAssetDialog 
+          open={isIssueAssetDialogOpen}
+          onOpenChange={setIsIssueAssetDialogOpen}
+          user={selectedUser}
+        />
+      )}
 
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
@@ -159,6 +174,7 @@ export default function AdminPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Group</TableHead>
+                  <TableHead className="text-right">Issue Asset</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,6 +184,11 @@ export default function AdminPage() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{user.group}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button variant="outline" size="sm" onClick={() => handleIssueAssetClick(user)}>
+                            Issue Asset
+                        </Button>
                     </TableCell>
                   </TableRow>
                 ))}
