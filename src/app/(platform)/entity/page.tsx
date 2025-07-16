@@ -306,6 +306,43 @@ function EntityManagementComponent() {
         </p>
       </div>
 
+      {selectedEntityName ? (
+        <div className="space-y-6">
+            <WalletDisplay entityName={selectedEntityName} />
+        </div>
+      ) : (
+        <Card>
+            <CardHeader>
+                <CardTitle>Select an Entity</CardTitle>
+                <CardDescription>Choose an entity to view its wallet, users, and services.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <FormField
+                    control={form.control}
+                    name="entity"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Entity</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select an entity" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {entities.map((entity) => (
+                                <SelectItem key={entity.id} value={entity.id}>{entity.name}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
             <CardHeader>
@@ -414,11 +451,6 @@ function EntityManagementComponent() {
             </CardContent>
         </Card>
       </div>
-       {selectedEntityName && (
-        <div className="mt-6">
-            <WalletDisplay entityName={selectedEntityName} />
-        </div>
-      )}
     </div>
   );
 }
