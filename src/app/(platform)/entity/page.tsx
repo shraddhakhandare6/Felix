@@ -44,6 +44,7 @@ import { useServices } from '@/context/service-context';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useKeycloak } from '@react-keycloak/web';
+import { WalletDisplay } from '@/components/wallet-display';
 
 const addUserSchema = z.object({
   entity: z.string({ required_error: "Please select an entity." }),
@@ -66,6 +67,8 @@ function EntityManagementComponent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const entityId = searchParams.get('entityId');
+    const [selectedEntityName, setSelectedEntityName] = useState<string | null>(null);
+
 
     const form = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
@@ -78,10 +81,19 @@ function EntityManagementComponent() {
     useEffect(() => {
         if (entityId) {
             form.setValue('entity', entityId);
+            const entity = entities.find(e => e.id === entityId);
+            if (entity) {
+                setSelectedEntityName(entity.name);
+            }
         }
-    }, [entityId, form]);
+    }, [entityId, form, entities]);
 
     const selectedEntityId = form.watch('entity');
+
+    useEffect(() => {
+        const entity = entities.find(e => e.id === selectedEntityId);
+        setSelectedEntityName(entity ? entity.name : null);
+    }, [selectedEntityId, entities]);
 
     useEffect(() => {
         const fetchMappedUsers = async () => {
@@ -402,6 +414,11 @@ function EntityManagementComponent() {
             </CardContent>
         </Card>
       </div>
+       {selectedEntityName && (
+        <div className="mt-6">
+            <WalletDisplay entityName={selectedEntityName} />
+        </div>
+      )}
     </div>
   );
 }
@@ -414,5 +431,3 @@ export default function EntityPage() {
         </Suspense>
     )
 }
-
-    
