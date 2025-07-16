@@ -94,8 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [initialized, keycloak, pathname, router, updateUser, isKeycloakReady, userProfile]);
 
   const login = () => keycloak?.login();
-  const logout = () => {
-    localStorage.removeItem('user');
+  // const logout = () => {
+  //   localStorage.removeItem('user');
+  //   keycloak?.logout();
+  // };
+    const logout = () => {
+    localStorage.clear();
     keycloak?.logout();
   };
   

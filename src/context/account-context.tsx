@@ -57,49 +57,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
                 localStorage.removeItem(storageKey);
             }
         }
-        
-        const apiBaseUrl = 'https://5000-firebase-felix-cashflow-1751957540178.cluster-htdgsbmflbdmov5xrjithceibm.cloudworkstations.dev';
-        if (!apiBaseUrl) {
-            toast({
-                variant: 'destructive',
-                title: 'Configuration Error',
-                description: 'The API endpoint is not configured.',
-            });
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            const response = await fetch(`${apiBaseUrl}/api/v1/wallets/export`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: user.email }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'Failed to fetch wallet keys.' }));
-                throw new Error(errorData.message || 'An unknown error occurred.');
-            }
-
-            const data = await response.json();
-            const newAccount: Account = {
-                publicKey: data.public_key,
-                secretKey: data.secret,
-            };
-
-            setAccount(newAccount);
-            localStorage.setItem(storageKey, JSON.stringify(newAccount));
-            
-        } catch (error) {
-            console.error("Failed to fetch wallet keys:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Fetch Failed',
-                description: error instanceof Error ? error.message : 'Could not fetch wallet details.',
-            });
-        } finally {
-            setIsLoading(false);
-        }
+        // Remove API call to /api/v1/wallets/export
+        // Instead, just set to initialAccount
+        setAccount(initialAccount);
+        setIsLoading(false);
     };
 
     fetchAndSetAccount();
