@@ -16,6 +16,7 @@ import {
   User,
   Shield,
   Briefcase,
+  Package,
 } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useUser } from '@/context/user-context';
@@ -54,6 +55,7 @@ const allMenuItems = [
   { href: '/marketplace', label: 'Marketplace', icon: ShoppingBag, roles: ['realm-admin', 'user'] },
   { href: '/payment-requests', label: 'Payment Requests', icon: Send, roles: ['realm-admin', 'user'] },
   { href: '/contacts', label: 'Contacts', icon: Users, roles: ['realm-admin', 'user'] },
+  { href: '/assets', label: 'Assets', icon: Package, roles: ['realm-admin'] },
   { href: '/entity', label: 'Entity', icon: Briefcase, roles: ['realm-admin'] },
   { href: '/admin', label: 'Admin', icon: Shield, roles: ['realm-admin'] },
   { href: '/account', label: 'Account', icon: Settings, roles: ['realm-admin', 'user'] },

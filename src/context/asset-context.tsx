@@ -5,20 +5,23 @@ import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface Asset {
-  asset_code: string;
   id: string;
+  asset_code: string;
+  issuer: string;
+  trustlines: number;
+  amount: string;
 }
 
 interface AssetContextType {
   assets: Asset[];
-  addAsset: (newAsset: Asset) => void;
+  addAsset: (newAsset: Omit<Asset, 'id' | 'issuer' | 'trustlines' | 'amount'>) => void;
   refreshAssets: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
 
 const defaultAssets: Asset[] = [
-  { asset_code: "BD", id: "default-bd-asset" }
+  // Default BD asset will be dynamically added from fetch if available
 ];
 
 const AssetContext = createContext<AssetContextType | undefined>(undefined);
@@ -46,21 +49,21 @@ export function AssetProvider({ children }: { children: ReactNode }) {
       const fetchedAssets: Asset[] = [];
       if (parsedJson?.getAssetsResponse?.data) {
         parsedJson.getAssetsResponse.data.forEach((item: any) => {
-          if (item.asset_code && item.id) {
+          // Check for all required fields to ensure data integrity
+          if (item.id && item.asset_code && item.balances && item.acc) {
             fetchedAssets.push({
-              asset_code: item.asset_code,
               id: item.id,
+              asset_code: item.asset_code,
+              issuer: item.acc.issuer,
+              // 'authorize' seems to be a boolean, so count how many accounts have it true
+              trustlines: item.acc.authorize ? 1 : 0, // This needs clarification, assuming 1 if true
+              amount: item.balances.authorize, // Assuming this is the total quantity
             });
           }
         });
       }
 
-      setAssets(prevAssets => {
-        const assetMap = new Map<string, Asset>();
-        defaultAssets.forEach(asset => assetMap.set(asset.asset_code, asset));
-        fetchedAssets.forEach(asset => assetMap.set(asset.asset_code, asset));
-        return Array.from(assetMap.values());
-      });
+      setAssets(fetchedAssets);
 
     } catch (err) {
       console.error('Failed to fetch assets:', err);
@@ -75,8 +78,17 @@ export function AssetProvider({ children }: { children: ReactNode }) {
     refreshAssets();
   }, [refreshAssets]);
 
-  const addAsset = (newAsset: Asset) => {
-    setAssets((prev) => [newAsset, ...prev.filter(asset => !asset.id.startsWith('temp_'))]);
+  const addAsset = (newAsset: Omit<Asset, 'id' | 'issuer' | 'trustlines' | 'amount'>) => {
+    // This function is now simplified as we mainly rely on backend data.
+    // It can be used for optimistic updates if needed.
+    const optimisticAsset: Asset = {
+      id: `temp_${Date.now()}`,
+      asset_code: newAsset.asset_code,
+      issuer: '',
+      trustlines: 0,
+      amount: '0',
+    };
+    setAssets((prev) => [optimisticAsset, ...prev.filter(asset => !asset.id.startsWith('temp_'))]);
   };
 
   return (
