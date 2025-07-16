@@ -317,28 +317,32 @@ function EntityManagementComponent() {
                 <CardDescription>Choose an entity to view its wallet, users, and services.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <FormField
-                    control={form.control}
-                    name="entity"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Entity</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select an entity" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {entities.map((entity) => (
-                                <SelectItem key={entity.id} value={entity.id}>{entity.name}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                <Form {...form}>
+                    <form>
+                        <FormField
+                            control={form.control}
+                            name="entity"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Entity</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select an entity" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                    {entities.map((entity) => (
+                                        <SelectItem key={entity.id} value={entity.id}>{entity.name}</SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </form>
+                 </Form>
             </CardContent>
         </Card>
       )}
