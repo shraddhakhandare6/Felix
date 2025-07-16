@@ -23,7 +23,6 @@ interface AppTokenParsed extends KeycloakTokenParsed {
   };
 }
 
-
 interface AuthContextType {
   isAuthenticated: boolean;
   user: KeycloakProfile | null;
