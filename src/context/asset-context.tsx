@@ -36,7 +36,7 @@ export function AssetProvider({ children }: { children: ReactNode }) {
     setError(null);
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!apiBaseUrl) {
-      console.error('API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.');
+      setError('API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.');
       setAssets(defaultAssets);
       setIsLoading(false);
       return;
@@ -44,31 +44,32 @@ export function AssetProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+      
       const parsedJson = await response.json();
 
-      const fetchedAssets: Asset[] = [];
-      if (parsedJson?.getAssetsResponse?.data) {
-        parsedJson.getAssetsResponse.data.forEach((item: any) => {
-          // Check for all required fields to ensure data integrity
-          if (item.id && item.asset_code && item.balances && item.acc) {
-            fetchedAssets.push({
+      if (parsedJson?.success === false || !parsedJson?.getAssetsResponse?.data) {
+        setAssets([]);
+      } else {
+        const fetchedAssets: Asset[] = parsedJson.getAssetsResponse.data.map((item: any) => {
+           return {
               id: item.id,
               asset_code: item.asset_code,
               issuer: item.acc.issuer,
-              // 'authorize' seems to be a boolean, so count how many accounts have it true
-              trustlines: item.acc.authorize ? 1 : 0, // This needs clarification, assuming 1 if true
-              amount: item.balances.authorize, // Assuming this is the total quantity
-            });
-          }
+              // 'acc' is an array, so its length represents the number of trustlines
+              trustlines: Array.isArray(item.acc) ? item.acc.length : 0, 
+              amount: item.balances.authorize,
+            };
         });
+        setAssets(fetchedAssets);
       }
-
-      setAssets(fetchedAssets);
 
     } catch (err) {
       console.error('Failed to fetch assets:', err);
       setError('Failed to fetch assets');
-      setAssets(defaultAssets);
+      setAssets([]); // Reset to empty on error
     } finally {
       setIsLoading(false);
     }
