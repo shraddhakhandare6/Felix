@@ -45,6 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useKeycloak } from '@react-keycloak/web';
 import { WalletDisplay } from '@/components/wallet-display';
+import { ChevronLeft } from 'lucide-react';
 
 const addUserSchema = z.object({
   entity: z.string({ required_error: "Please select an entity." }),
@@ -297,64 +298,77 @@ function EntityManagementComponent() {
         }
     }
 
+    const handleChangeEntity = () => {
+        form.reset({
+            ...form.getValues(),
+            entity: undefined,
+        });
+        setSelectedEntityName(null);
+        router.replace('/entity', { scroll: false });
+    };
+
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold">Entity Management</h1>
-        <p className="text-muted-foreground">
-          Manage users and services for your entities.
-        </p>
+      <div className="space-y-1 flex justify-between items-center">
+        <div>
+            <h1 className="text-3xl font-bold">Entity Management</h1>
+            <p className="text-muted-foreground">
+            Manage users and services for your entities.
+            </p>
+        </div>
+        {selectedEntityName && (
+            <Button variant="outline" onClick={handleChangeEntity}>
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Change Entity
+            </Button>
+        )}
       </div>
 
-      {selectedEntityName ? (
-        <div className="space-y-6">
-            <WalletDisplay entityName={selectedEntityName} />
-        </div>
-      ) : (
-        <Card>
-            <CardHeader>
-                <CardTitle>Select an Entity</CardTitle>
-                <CardDescription>Choose an entity to view its wallet, users, and services.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form>
-                        <FormField
-                            control={form.control}
-                            name="entity"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Entity</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select an entity" />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                    {entities.map((entity) => (
-                                        <SelectItem key={entity.id} value={entity.id}>{entity.name}</SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </form>
-                 </Form>
-            </CardContent>
-        </Card>
-      )}
+      <Form {...form}>
+        {selectedEntityName ? (
+            <div className="space-y-6">
+                <WalletDisplay entityName={selectedEntityName} />
+            </div>
+        ) : (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Select an Entity</CardTitle>
+                    <CardDescription>Choose an entity to view its wallet, users, and services.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FormField
+                        control={form.control}
+                        name="entity"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Entity</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select an entity" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {entities.map((entity) => (
+                                    <SelectItem key={entity.id} value={entity.id}>{entity.name}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
+        )}
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-            <CardHeader>
-                <CardTitle>Manage Users</CardTitle>
-                <CardDescription>Map users to an entity or unmap them.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Form {...form}>
+        <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Manage Users</CardTitle>
+                    <CardDescription>Map users to an entity or unmap them.</CardDescription>
+                </CardHeader>
+                <CardContent>
                     <form onSubmit={form.handleSubmit(onAddUser)} className="space-y-4">
                         <FormField
                             control={form.control}
@@ -362,7 +376,7 @@ function EntityManagementComponent() {
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Entity</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value || ""}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select an entity" />
@@ -393,68 +407,68 @@ function EntityManagementComponent() {
                         />
                         <Button type="submit">Add User</Button>
                     </form>
-                </Form>
-            </CardContent>
-            <CardFooter className="flex flex-col items-start">
-                <h3 className="font-medium mb-4">Mapped Users</h3>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Entity</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {mappedUsers.length > 0 ? (
-                            mappedUsers.map((user) => (
-                                <TableRow key={user.id}>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell>{user.entity}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="destructive" size="sm" onClick={() => unmapUser(user.id)}>Unmap</Button>
+                </CardContent>
+                <CardFooter className="flex flex-col items-start">
+                    <h3 className="font-medium mb-4">Mapped Users</h3>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Entity</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {mappedUsers.length > 0 ? (
+                                mappedUsers.map((user) => (
+                                    <TableRow key={user.id}>
+                                        <TableCell>{user.email}</TableCell>
+                                        <TableCell>{user.entity}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="destructive" size="sm" onClick={() => unmapUser(user.id)}>Unmap</Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                        Select an entity to see its members.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                             <TableRow>
-                                <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                    Select an entity to see its members.
-                                </TableCell>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardFooter>
+            </Card>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Associated Services</CardTitle>
+                    <CardDescription>Services offered by your entities.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Service</TableHead>
+                                <TableHead>Status</TableHead>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardFooter>
-        </Card>
-        
-        <Card>
-            <CardHeader>
-                <CardTitle>Associated Services</CardTitle>
-                <CardDescription>Services offered by your entities.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Service</TableHead>
-                            <TableHead>Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {services.filter(s => s.status === 'Active').map((service) => (
-                            <TableRow key={service.name} onClick={() => handleServiceClick(service.name)} className="cursor-pointer">
-                                <TableCell>{service.name}</TableCell>
-                                <TableCell>
-                                     <Badge variant={service.status === 'Active' ? 'success' : 'secondary'}>{service.status}</Badge>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-      </div>
+                        </TableHeader>
+                        <TableBody>
+                            {services.filter(s => s.status === 'Active').map((service) => (
+                                <TableRow key={service.name} onClick={() => handleServiceClick(service.name)} className="cursor-pointer">
+                                    <TableCell>{service.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={service.status === 'Active' ? 'success' : 'secondary'}>{service.status}</Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+      </Form>
     </div>
   );
 }
@@ -467,3 +481,5 @@ export default function EntityPage() {
         </Suspense>
     )
 }
+
+    
