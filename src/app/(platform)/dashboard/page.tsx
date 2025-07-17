@@ -303,6 +303,8 @@ function DashboardPageContent() {
                   <TableRow>
                     <TableHead>Type</TableHead>
                     <TableHead>Details</TableHead>
+                    <TableHead>Creator Email</TableHead>
+                    <TableHead>Entity Name</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -320,6 +322,8 @@ function DashboardPageContent() {
                         <div className="font-medium">{tx.recipient}</div>
                         <div className="text-sm text-muted-foreground">{tx.service}</div>
                       </TableCell>
+                      <TableCell>{tx.creatorEmail || '-'}</TableCell>
+                      <TableCell>{tx.entityName || '-'}</TableCell>
                       <TableCell className="text-right font-mono">{tx.amount}</TableCell>
                     </TableRow>
                   ))}

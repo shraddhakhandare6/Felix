@@ -50,17 +50,24 @@ export function AssetProvider({ children }: { children: ReactNode }) {
       
       const parsedJson = await response.json();
 
-      if (parsedJson?.success === false || !parsedJson?.getAssetsResponse?.data) {
+      // Support both old and new API response structures
+      let assetList = [];
+      if (parsedJson?.getAssetsResponse?.data) {
+        assetList = parsedJson.getAssetsResponse.data;
+      } else if (parsedJson?.data && Array.isArray(parsedJson.data) && parsedJson.data[0]?.data) {
+        assetList = parsedJson.data[0].data;
+      }
+
+      if (!assetList.length) {
         setAssets([]);
       } else {
-        const fetchedAssets: Asset[] = parsedJson.getAssetsResponse.data.map((item: any) => {
+        const fetchedAssets: Asset[] = assetList.map((item: any) => {
            return {
               id: item.id,
               asset_code: item.asset_code,
-              issuer: item.acc.issuer,
-              // 'acc' is an array, so its length represents the number of trustlines
-              trustlines: Array.isArray(item.acc) ? item.acc.length : 0, 
-              amount: item.balances.authorize,
+            issuer: item.issuer || '',
+            trustlines: 0, // Not available in new response, set to 0 or update if needed
+            amount: item.amount_issued || '0',
             };
         });
         setAssets(fetchedAssets);
@@ -72,6 +79,35 @@ export function AssetProvider({ children }: { children: ReactNode }) {
       setAssets([]); // Reset to empty on error
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  // Add function to fetch issued assets
+  const fetchIssuedAssets = useCallback(async (issuer: string) => {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      setError('API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.');
+      return [];
+    }
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/assets/issued/${issuer}`);
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+      const parsedJson = await response.json();
+      if (parsedJson?.success && Array.isArray(parsedJson.data)) {
+        return parsedJson.data.map((item: any) => ({
+          id: item.paging_token,
+          asset_code: item.asset_code,
+          issuer: item.asset_issuer,
+          trustlines: item.accounts?.authorized || 0,
+          amount: item.balances?.authorized || '0',
+        }));
+      }
+      return [];
+    } catch (err) {
+      setError('Failed to fetch issued assets');
+      return [];
     }
   }, []);
 
@@ -93,7 +129,7 @@ export function AssetProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AssetContext.Provider value={{ assets, addAsset, refreshAssets, isLoading, error }}>
+    <AssetContext.Provider value={{ assets, addAsset, refreshAssets, isLoading, error, fetchIssuedAssets }}>
       {children}
     </AssetContext.Provider>
   );

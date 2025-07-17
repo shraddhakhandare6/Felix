@@ -29,28 +29,37 @@ import { useUser } from '@/context/user-context';
 import { useEntities } from '@/context/entity-context';
 
 const TransactionTable = ({ transactions }: { transactions: TxType[] }) => {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.ceil(transactions.length / pageSize);
+  const paginated = transactions.slice((page - 1) * pageSize, page * pageSize);
+
   if (!transactions.length) {
     return <p className="text-center text-muted-foreground py-8">No transactions to display for this category.</p>
   }
-  
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Type</TableHead>
           <TableHead>Details</TableHead>
           <TableHead className="hidden md:table-cell">Date</TableHead>
+          <TableHead>Creator Email</TableHead>
+          <TableHead>Entity Name</TableHead>
           <TableHead className="text-right">Amount</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {transactions.map((tx) => (
+          {paginated.map((tx) => (
           <TableRow key={tx.id}>
             <TableCell>
               <Badge variant={tx.type === "Sent" ? "destructive" : tx.type === "Received" ? "default" : "secondary"} className="capitalize">{tx.type}</Badge>
             </TableCell>
             <TableCell>{tx.service}</TableCell>
             <TableCell className="hidden md:table-cell">{tx.date}</TableCell>
+            <TableCell>{tx.creatorEmail || '-'}</TableCell>
+            <TableCell>{tx.entityName || '-'}</TableCell>
             <TableCell className={`text-right font-mono ${tx.amount.startsWith('+') ? 'text-accent' : 'text-destructive'}`}>
               {tx.amount}
             </TableCell>
@@ -58,6 +67,14 @@ const TransactionTable = ({ transactions }: { transactions: TxType[] }) => {
         ))}
       </TableBody>
     </Table>
+      <div className="flex justify-between items-center mt-2">
+        <span className="text-xs text-muted-foreground">Page {page} of {totalPages}</span>
+        <div className="space-x-2">
+          <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
+          <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+        </div>
+      </div>
+    </>
   );
 };
 
@@ -79,7 +96,7 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
   const [balances, setBalances] = useState<any[]>([]);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
-
+  
   const nameFilter = entityName || searchParams.get('name');
 
   // Determine email and type for balance API
@@ -195,7 +212,7 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
           <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Export Wallet for Entity: {entityName}</DialogTitle>
+                <DialogTitle>Wallet for Entity: {entityName}</DialogTitle>
                 <DialogDescription>
                   Export the public and secret keys for this entity's wallet. You will need to provide the entity owner's email.
                 </DialogDescription>
@@ -230,19 +247,24 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
           <Card><CardContent>No balances found.</CardContent></Card>
         ) : (
           balances.map((asset, idx) => {
-            const code = asset.asset_code || asset.asset_type || idx;
-            const assetName = assetNameMap[code] || code;
+            let code = asset.asset_code || asset.asset_type || idx;
+            let assetName = assetNameMap[code] || code;
+            // If asset_type is 'native', show 'XML' everywhere
+            if (asset.asset_type === 'native' || code === 'native') {
+              code = 'XML';
+              assetName = 'XML';
+            }
             return (
               <Card key={code}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                   <CardTitle className="text-sm font-medium">{assetName}</CardTitle>
-                  {asset.asset_code === 'BD' ? <BadgeDollarSign className="w-6 h-6 text-primary" /> : <CreditCard className="w-6 h-6 text-muted-foreground" />}
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{asset.balance}</div>
+                  {code === 'BD' ? <BadgeDollarSign className="w-6 h-6 text-primary" /> : <CreditCard className="w-6 h-6 text-muted-foreground" />}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{asset.balance}</div>
                   <p className="text-xs text-muted-foreground">{code}</p>
-                </CardContent>
-              </Card>
+            </CardContent>
+          </Card>
             );
           })
         )}
