@@ -36,6 +36,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const { user } = useUser();
   const { toast } = useToast();
 
+  
   useEffect(() => {
     if (!user.email) return;
 

@@ -5,20 +5,23 @@ import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface Asset {
-  asset_code: string;
   id: string;
+  asset_code: string;
+  issuer: string;
+  trustlines: number;
+  amount: string;
 }
 
 interface AssetContextType {
   assets: Asset[];
-  addAsset: (newAsset: Asset) => void;
+  addAsset: (newAsset: Omit<Asset, 'id' | 'issuer' | 'trustlines' | 'amount'>) => void;
   refreshAssets: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
 
 const defaultAssets: Asset[] = [
-  { asset_code: "BD", id: "default-bd-asset" }
+  // Default BD asset will be dynamically added from fetch if available
 ];
 
 const AssetContext = createContext<AssetContextType | undefined>(undefined);
@@ -33,7 +36,7 @@ export function AssetProvider({ children }: { children: ReactNode }) {
     setError(null);
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!apiBaseUrl) {
-      console.error('API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.');
+      setError('API endpoint is not configured. Please set NEXT_PUBLIC_API_BASE_URL.');
       setAssets(defaultAssets);
       setIsLoading(false);
       return;
@@ -41,31 +44,32 @@ export function AssetProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/v1/assets/`);
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
+      
       const parsedJson = await response.json();
 
-      const fetchedAssets: Asset[] = [];
-      if (parsedJson?.getAssetsResponse?.data) {
-        parsedJson.getAssetsResponse.data.forEach((item: any) => {
-          if (item.asset_code && item.id) {
-            fetchedAssets.push({
-              asset_code: item.asset_code,
+      if (parsedJson?.success === false || !parsedJson?.getAssetsResponse?.data) {
+        setAssets([]);
+      } else {
+        const fetchedAssets: Asset[] = parsedJson.getAssetsResponse.data.map((item: any) => {
+           return {
               id: item.id,
-            });
-          }
+              asset_code: item.asset_code,
+              issuer: item.acc.issuer,
+              // 'acc' is an array, so its length represents the number of trustlines
+              trustlines: Array.isArray(item.acc) ? item.acc.length : 0, 
+              amount: item.balances.authorize,
+            };
         });
+        setAssets(fetchedAssets);
       }
-
-      setAssets(prevAssets => {
-        const assetMap = new Map<string, Asset>();
-        defaultAssets.forEach(asset => assetMap.set(asset.asset_code, asset));
-        fetchedAssets.forEach(asset => assetMap.set(asset.asset_code, asset));
-        return Array.from(assetMap.values());
-      });
 
     } catch (err) {
       console.error('Failed to fetch assets:', err);
       setError('Failed to fetch assets');
-      setAssets(defaultAssets);
+      setAssets([]); // Reset to empty on error
     } finally {
       setIsLoading(false);
     }
@@ -75,8 +79,17 @@ export function AssetProvider({ children }: { children: ReactNode }) {
     refreshAssets();
   }, [refreshAssets]);
 
-  const addAsset = (newAsset: Asset) => {
-    setAssets((prev) => [newAsset, ...prev.filter(asset => !asset.id.startsWith('temp_'))]);
+  const addAsset = (newAsset: Omit<Asset, 'id' | 'issuer' | 'trustlines' | 'amount'>) => {
+    // This function is now simplified as we mainly rely on backend data.
+    // It can be used for optimistic updates if needed.
+    const optimisticAsset: Asset = {
+      id: `temp_${Date.now()}`,
+      asset_code: newAsset.asset_code,
+      issuer: '',
+      trustlines: 0,
+      amount: '0',
+    };
+    setAssets((prev) => [optimisticAsset, ...prev.filter(asset => !asset.id.startsWith('temp_'))]);
   };
 
   return (
