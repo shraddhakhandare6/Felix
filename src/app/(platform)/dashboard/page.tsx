@@ -58,6 +58,10 @@ function DashboardPageContent() {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
+  const [walletBalance, setWalletBalance] = useState<string | null>(null);
+  const [walletAsset, setWalletAsset] = useState<string>('BD');
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
 
   const recentTransactions = transactions.slice(0, 5);
 
@@ -80,6 +84,43 @@ function DashboardPageContent() {
       keycloak.login();
     }
   }, [initialized, keycloak]);
+
+  // Fetch wallet balance for user
+  useEffect(() => {
+    if (!currentUser?.email) return;
+    setWalletLoading(true);
+    setWalletError(null);
+    setWalletBalance(null);
+    fetch(`http://localhost:5000/api/v1/wallets/balance/type/user/${currentUser.email}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || data.message || 'Failed to fetch wallet balance');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          // Prefer BD, else show first asset
+          const bdAsset = data.data.find((a: any) => a.asset_code === 'BD');
+          const asset = bdAsset || data.data[0];
+          let code = asset.asset_code || asset.asset_type || 'Asset';
+          if (code === 'native') code = 'XML';
+          setWalletBalance(asset.balance);
+          setWalletAsset(code);
+        } else {
+          throw new Error('No wallet balance found');
+        }
+      })
+      .catch((err) => {
+        setWalletError(err.message);
+        setWalletBalance(null);
+      })
+      .finally(() => setWalletLoading(false));
+  }, [currentUser?.email]);
 
   const handleSendPayment = () => {
     if (!recipient || !amount) {
@@ -186,7 +227,15 @@ function DashboardPageContent() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
-                  <div className="text-3xl font-bold">10,430.50 BD</div>
+                  {walletLoading ? (
+                    <div className="text-3xl font-bold">Loading...</div>
+                  ) : walletError ? (
+                    <div className="text-3xl font-bold text-red-500">{walletError}</div>
+                  ) : walletBalance ? (
+                    <div className="text-3xl font-bold">{parseFloat(walletBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {walletAsset}</div>
+                  ) : (
+                    <div className="text-3xl font-bold">-</div>
+                  )}
                 </div>
               </div>
               <div className="space-y-4 pt-4 border-t">

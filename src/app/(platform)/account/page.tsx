@@ -158,7 +158,11 @@ export default function AccountPage() {
           return res.json();
         })
         .then((data) => {
-          setExportAccount({ publicKey: data.public_key, secretKey: data.secret });
+          if (data.success && Array.isArray(data.data) && data.data[0]) {
+            setExportAccount({ publicKey: data.data[0].public_key, secretKey: data.data[0].secret });
+          } else {
+            throw new Error("Invalid response from server");
+          }
         })
         .catch((err) => {
           setExportError(err.message);
