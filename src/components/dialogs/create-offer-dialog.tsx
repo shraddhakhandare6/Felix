@@ -20,9 +20,11 @@ import { useServices } from '@/context/service-context';
 import { useOffers, type Offer } from '@/context/offers-context';
 import { useToast } from '@/hooks/use-toast';
 import { useEntities } from '@/context/entity-context';
+import { useKeycloak } from '@react-keycloak/web';
 
 export function CreateOfferDialog() {
   const [open, setOpen] = useState(false);
+  const { keycloak } = useKeycloak();
   
   const { services } = useServices();
   const { entities } = useEntities();
@@ -71,6 +73,7 @@ export function CreateOfferDialog() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...(keycloak?.token ? { 'Authorization': `Bearer ${keycloak.token}` } : {})
             },
             body: JSON.stringify(offerPayload),
         });
