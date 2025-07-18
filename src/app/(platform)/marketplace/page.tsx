@@ -56,14 +56,41 @@ export default function MarketplacePage() {
     setIsConfirmOpen(true);
   };
   
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (selectedOffer) {
+      if (selectedOffer.action === 'Buy') {
+        // Call the sell offer API to buy the offer
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/offers/sell`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              creatorEmail: 'shraddha@cateina.com',
+              entityName: 'kvb',
+              otype: 'sell',
+              assetCode: 'BD',
+              amount: '10',
+              price: '0.1',
+            }),
+          });
+        } catch (error) {
+          toast({
+            title: 'Buy Failed',
+            description: 'There was an error processing your buy request.',
+            variant: 'destructive',
+          });
+          setIsConfirmOpen(false);
+          setSelectedOffer(null);
+          return;
+        }
+      }
       toast({
         title: `${selectedOffer.action} Successful`,
         description: `You have successfully agreed to ${selectedOffer.action.toLowerCase()} "${selectedOffer.service}" for ${selectedOffer.price}.`,
         variant: 'success',
       });
-      
       if (selectedOffer.action === 'Buy') {
         setSellOffers(prevOffers => prevOffers.filter(offer => offer.service !== selectedOffer.service));
       } else if (selectedOffer.action === 'Sell') {

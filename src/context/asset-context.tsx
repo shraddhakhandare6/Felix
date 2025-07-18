@@ -129,7 +129,7 @@ export function AssetProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AssetContext.Provider value={{ assets, addAsset, refreshAssets, isLoading, error, fetchIssuedAssets }}>
+    <AssetContext.Provider value={{ assets, addAsset, refreshAssets, isLoading, error }}>
       {children}
     </AssetContext.Provider>
   );

@@ -50,12 +50,11 @@ export function AssetCreationForm({ onSuccess }: AssetCreationFormProps) {
 
     addAsset({
       asset_code: values.assetCode,
-      id: `temp_${Date.now()}`,
     });
     form.reset();
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/assets/create`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/assets/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

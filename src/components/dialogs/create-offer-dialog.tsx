@@ -52,8 +52,8 @@ export function CreateOfferDialog() {
 
     const isBuyOffer = type === 'buy';
     const apiUrl = isBuyOffer
-      ? 'http://localhost:5000/api/v1/offers/buy'
-      : 'http://localhost:5000/api/v1/offers/sell';
+      ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/offers/buy`
+      : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/offers/sell`;
 
     const basePayload = {
         creatorEmail: email,
@@ -95,6 +95,9 @@ export function CreateOfferDialog() {
           type: type === 'sell' ? 'Sell' : 'Buy',
           service: serviceName,
           price: `${price} BD`,
+          entityName: entityName,
+          date: new Date().toISOString(),
+          creatorEmail: email,
         });
 
     } catch (error) {

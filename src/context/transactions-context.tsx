@@ -53,7 +53,7 @@ export function TransactionsProvider({ children }: { children: ReactNode }) {
           // Map each balance entry to a Transaction
           const mapped = data.data.map((item: any, idx: number) => {
             let code = item.asset_code || item.asset_type || 'Asset';
-            if (item.asset_type === 'native' || code === 'native') code = 'XML';
+            if (item.asset_type === 'native' || code === 'native') code = 'XLM';
             let amount = item.balance;
             if (typeof amount === 'number') amount = amount.toString();
             if (typeof amount !== 'string') amount = '0';

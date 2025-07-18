@@ -37,7 +37,7 @@ export function EntityProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/tenants/Felix/entity/`, {
         headers: {
           'Authorization': `Bearer ${keycloak.token}`
         }
