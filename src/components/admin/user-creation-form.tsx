@@ -80,7 +80,7 @@ export function UserCreationForm({ onSuccess }: UserCreationFormProps) {
     form.reset();
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/users`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/tenants/Felix/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

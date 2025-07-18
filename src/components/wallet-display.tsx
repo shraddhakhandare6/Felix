@@ -25,14 +25,32 @@ import { useTransactions, type Transaction as TxType } from '@/context/transacti
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { useUser } from '@/context/user-context';
 import { useEntities } from '@/context/entity-context';
+import { useToast } from '@/hooks/use-toast';
 
-const TransactionTable = ({ transactions }: { transactions: TxType[] }) => {
+const TransactionTable = ({ 
+  transactions, 
+  isLoading = false, 
+  error = null 
+}: { 
+  transactions: TxType[];
+  isLoading?: boolean;
+  error?: string | null;
+}) => {
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const totalPages = Math.ceil(transactions.length / pageSize);
   const paginated = transactions.slice((page - 1) * pageSize, page * pageSize);
+
+  if (isLoading) {
+    return <p className="text-center text-muted-foreground py-8">Loading transactions...</p>
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500 py-8">Error loading transactions: {error}</p>
+  }
 
   if (!transactions.length) {
     return <p className="text-center text-muted-foreground py-8">No transactions to display for this category.</p>
@@ -45,8 +63,6 @@ const TransactionTable = ({ transactions }: { transactions: TxType[] }) => {
           <TableHead>Type</TableHead>
           <TableHead>Details</TableHead>
           <TableHead className="hidden md:table-cell">Date</TableHead>
-          <TableHead>Creator Email</TableHead>
-          <TableHead>Entity Name</TableHead>
           <TableHead className="text-right">Amount</TableHead>
         </TableRow>
       </TableHeader>
@@ -58,8 +74,6 @@ const TransactionTable = ({ transactions }: { transactions: TxType[] }) => {
             </TableCell>
             <TableCell>{tx.service}</TableCell>
             <TableCell className="hidden md:table-cell">{tx.date}</TableCell>
-            <TableCell>{tx.creatorEmail || '-'}</TableCell>
-            <TableCell>{tx.entityName || '-'}</TableCell>
             <TableCell className={`text-right font-mono ${tx.amount.startsWith('+') ? 'text-accent' : 'text-destructive'}`}>
               {tx.amount}
             </TableCell>
@@ -78,24 +92,92 @@ const TransactionTable = ({ transactions }: { transactions: TxType[] }) => {
   );
 };
 
+// Quick Payment Form Component - moved outside to prevent re-rendering issues
+const QuickPaymentForm = ({ 
+  recipient, 
+  setRecipient, 
+  amount, 
+  setAmount, 
+  memo, 
+  setMemo, 
+  onSendPayment 
+}: {
+  recipient: string;
+  setRecipient: (value: string) => void;
+  amount: string;
+  setAmount: (value: string) => void;
+  memo: string;
+  setMemo: (value: string) => void;
+  onSendPayment: () => void;
+}) => (
+  <div className="space-y-4">
+    <div className="grid gap-2">
+      <Label htmlFor="recipient">Recipient</Label>
+      <Input 
+        id="recipient" 
+        placeholder="Stellar address or user@domain.com"
+        value={recipient}
+        onChange={(e) => setRecipient(e.target.value)}
+      />
+    </div>
+    <div className="grid gap-2">
+      <Label htmlFor="amount">Amount (BD)</Label>
+      <Input 
+        id="amount" 
+        type="text" 
+        placeholder="50.00" 
+        value={amount}
+        onChange={(e) => {
+          // Only allow numbers and decimal point
+          const value = e.target.value;
+          if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            setAmount(value);
+          }
+        }}
+      />
+    </div>
+    <div className="grid gap-2">
+      <Label htmlFor="memo">Memo (Optional)</Label>
+      <Input 
+        id="memo" 
+        placeholder="For service..."
+        value={memo}
+        onChange={(e) => setMemo(e.target.value)}
+      />
+    </div>
+    <Button onClick={onSendPayment} className="w-full">Send BlueDollars</Button>
+  </div>
+);
+
 interface WalletDisplayProps {
     entityName?: string | null;
 }
 
 export function WalletDisplay({ entityName }: WalletDisplayProps) {
   const searchParams = useSearchParams();
-  const { transactions } = useTransactions();
+  const { transactions, addTransaction } = useTransactions();
   const { user } = useUser();
   const { entities } = useEntities();
+  const { toast } = useToast();
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportResult, setExportResult] = useState<{ publicKey: string; secretKey: string } | null>(null);
 
+  // Quick Payment form state
+  const [recipient, setRecipient] = useState('');
+  const [amount, setAmount] = useState('');
+  const [memo, setMemo] = useState('');
+
   // Wallet balance state
   const [balances, setBalances] = useState<any[]>([]);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
+
+  // Entity transaction state
+  const [entityTransactions, setEntityTransactions] = useState<TxType[]>([]);
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionError, setTransactionError] = useState<string | null>(null);
   
   const nameFilter = entityName || searchParams.get('name');
 
@@ -111,6 +193,120 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
     creatorEmail = user.email;
     entityParam = entityName;
   }
+
+  // Handle Quick Payment
+  const handleSendPayment = () => {
+    if (!recipient || !amount) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Information',
+        description: 'Please enter a recipient and amount.',
+      });
+      return;
+    }
+
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Amount',
+        description: 'Please enter a valid positive amount.',
+      });
+      return;
+    }
+
+    const newTransaction: Omit<TxType, 'id' | 'icon' | 'status' | 'date'> = {
+      type: 'Sent',
+      recipient: recipient,
+      service: memo || 'Quick Payment',
+      amount: `-${numAmount.toFixed(2)} BD`,
+    };
+
+    addTransaction(newTransaction);
+
+    toast({
+      title: 'Payment Sent',
+      description: `${amount} BD successfully sent to ${recipient}.`,
+    });
+
+    setRecipient('');
+    setAmount('');
+    setMemo('');
+  };
+
+  // Fetch entity transactions
+  const fetchEntityTransactions = async (entityOwnerEmail: string, entityName: string) => {
+    setTransactionLoading(true);
+    setTransactionError(null);
+    setEntityTransactions([]);
+    
+    try {
+      // First get the entity's public key
+      const exportResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/wallets/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: entityOwnerEmail, entityName }),
+      });
+
+      if (!exportResponse.ok) {
+        throw new Error('Failed to fetch entity wallet');
+      }
+
+      const exportData = await exportResponse.json();
+      if (!exportData.success || !Array.isArray(exportData.data) || !exportData.data[0]) {
+        throw new Error('Invalid entity wallet response');
+      }
+
+      const entityPublicKey = exportData.data[0].public_key;
+
+      // Then fetch transactions for the entity using the balance API
+      const balanceUrl = `http://localhost:5000/api/v1/wallets/balance/type/entity/${entityOwnerEmail}?creatorEmail=${encodeURIComponent(user.email)}`;
+      
+      const balanceResponse = await fetch(balanceUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!balanceResponse.ok) {
+        throw new Error('Failed to fetch entity transactions');
+      }
+
+      const balanceData = await balanceResponse.json();
+      
+      if (balanceData.success && Array.isArray(balanceData.data)) {
+        // Map balance entries to transactions
+        const mappedTransactions: TxType[] = balanceData.data.map((item: any, idx: number) => {
+          let code = item.asset_code || item.asset_type || 'Asset';
+          if (item.asset_type === 'native' || code === 'native') code = 'XLM';
+          let amount = item.balance;
+          if (typeof amount === 'number') amount = amount.toString();
+          if (typeof amount !== 'string') amount = '0';
+          if (!amount.startsWith('+') && !amount.startsWith('-')) amount = '+' + amount;
+          
+          return {
+            id: `entity_tx_${entityName}_${idx}_${Date.now()}`,
+            type: 'Received',
+            icon: <BadgeDollarSign className="h-4 w-4 text-accent" />,
+            recipient: entityName,
+            service: `${code} Balance`,
+            amount,
+            status: 'Completed',
+            date: new Date().toISOString().split('T')[0],
+          };
+        });
+        
+        setEntityTransactions(mappedTransactions);
+      } else {
+        throw new Error('Invalid balance response format');
+      }
+    } catch (err: any) {
+      console.error('Error fetching entity transactions:', err);
+      setTransactionError(err.message || 'Failed to fetch entity transactions');
+      setEntityTransactions([]);
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
 
   // Fetch wallet balances
   React.useEffect(() => {
@@ -152,13 +348,30 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
       .finally(() => setBalanceLoading(false));
   }, [walletType, walletEmail, creatorEmail, entityParam]);
 
+  // Fetch entity transactions when entity is selected
+  React.useEffect(() => {
+    if (entityName) {
+      const entity = entities.find(e => e.name === entityName);
+      if (entity && entity.ownerEmail) {
+        fetchEntityTransactions(entity.ownerEmail, entityName);
+      }
+    } else {
+      // Clear entity transactions when no entity is selected
+      setEntityTransactions([]);
+      setTransactionError(null);
+    }
+  }, [entityName, entities, user.email]);
+
+  // Use entity transactions if entity is selected, otherwise use user transactions
+  const transactionsToUse = entityName ? entityTransactions : transactions;
+
   const filteredTransactions = useMemo(() => {
     if (!nameFilter) {
-      return transactions;
+      return transactionsToUse;
     }
     const lowerCaseFilter = nameFilter.toLowerCase();
-    return transactions.filter(tx => tx.recipient.toLowerCase().includes(lowerCaseFilter));
-  }, [nameFilter, transactions]);
+    return transactionsToUse.filter(tx => tx.recipient.toLowerCase().includes(lowerCaseFilter));
+  }, [nameFilter, transactionsToUse]);
 
   const sentTransactions = filteredTransactions.filter(tx => tx.type === 'Sent');
   const receivedTransactions = filteredTransactions.filter(tx => tx.type === 'Received' || tx.type === 'Issued');
@@ -177,7 +390,7 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
         setExportLoading(false);
         return;
       }
-      const response = await fetch('http://localhost:5000/api/v1/wallets/export', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/wallets/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, entityName }),
@@ -238,6 +451,59 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
           </Dialog>
         </div>
       )}
+
+      {/* Wallet Overview Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Wallet Overview</CardTitle>
+          <CardDescription>
+            Your current balance and a quick way to send BlueDollars.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center gap-4 p-6 rounded-lg bg-primary/10">
+            <div className="p-3 rounded-full bg-primary text-primary-foreground">
+              <BadgeDollarSign className="w-8 h-8" />
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
+              {balanceLoading ? (
+                <div className="text-3xl font-bold">Loading...</div>
+              ) : balanceError ? (
+                <div className="text-3xl font-bold text-red-500">{balanceError}</div>
+              ) : balances.length > 0 ? (
+                (() => {
+                  const bdAsset = balances.find((a: any) => a.asset_code === 'BD');
+                  const asset = bdAsset || balances[0];
+                  let code = asset.asset_code || asset.asset_type || 'Asset';
+                  if (code === 'native') code = 'XLM';
+                  return (
+                    <div className="text-3xl font-bold">
+                      {parseFloat(asset.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {code}
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="text-3xl font-bold">-</div>
+              )}
+            </div>
+          </div>
+          
+          <div className="space-y-4 pt-4 border-t">
+            <h3 className="font-medium">Quick Payment</h3>
+            <QuickPaymentForm
+              recipient={recipient}
+              setRecipient={setRecipient}
+              amount={amount}
+              setAmount={setAmount}
+              memo={memo}
+              setMemo={setMemo}
+              onSendPayment={handleSendPayment}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {balanceLoading ? (
           <Card><CardContent>Loading balances...</CardContent></Card>
@@ -249,10 +515,10 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
           balances.map((asset, idx) => {
             let code = asset.asset_code || asset.asset_type || idx;
             let assetName = assetNameMap[code] || code;
-            // If asset_type is 'native', show 'XML' everywhere
+            // If asset_type is 'native', show 'XLM' everywhere
             if (asset.asset_type === 'native' || code === 'native') {
-              code = 'XML';
-              assetName = 'XML';
+              code = 'XLM';
+              assetName = 'XLM';
             }
             return (
               <Card key={code}>
@@ -274,9 +540,11 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
         <CardHeader>
           <CardTitle>Transaction History</CardTitle>
           <CardDescription>
-            {nameFilter
-              ? `Displaying transactions for "${nameFilter}"`
-              : 'A complete log of your account activity.'
+            {entityName 
+              ? `Displaying transactions for entity: ${entityName}`
+              : nameFilter
+                ? `Displaying transactions for "${nameFilter}"`
+                : 'A complete log of your account activity.'
             }
           </CardDescription>
         </CardHeader>
@@ -289,16 +557,32 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
               <TabsTrigger value="trades">Trades</TabsTrigger>
             </TabsList>
             <TabsContent value="all" className="mt-4">
-              <TransactionTable transactions={filteredTransactions} />
+              <TransactionTable 
+                transactions={filteredTransactions} 
+                isLoading={entityName ? transactionLoading : false}
+                error={entityName ? transactionError : null}
+              />
             </TabsContent>
             <TabsContent value="sent" className="mt-4">
-              <TransactionTable transactions={sentTransactions} />
+              <TransactionTable 
+                transactions={sentTransactions} 
+                isLoading={entityName ? transactionLoading : false}
+                error={entityName ? transactionError : null}
+              />
             </TabsContent>
             <TabsContent value="received" className="mt-4">
-              <TransactionTable transactions={receivedTransactions} />
+              <TransactionTable 
+                transactions={receivedTransactions} 
+                isLoading={entityName ? transactionLoading : false}
+                error={entityName ? transactionError : null}
+              />
             </TabsContent>
             <TabsContent value="trades" className="mt-4">
-              <TransactionTable transactions={tradeTransactions} />
+              <TransactionTable 
+                transactions={tradeTransactions} 
+                isLoading={entityName ? transactionLoading : false}
+                error={entityName ? transactionError : null}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>

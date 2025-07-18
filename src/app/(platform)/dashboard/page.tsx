@@ -39,6 +39,62 @@ import { useTransactions, type Transaction } from '@/context/transactions-contex
 import { useUser } from '@/context/user-context';
 import { useEntities } from '@/context/entity-context';
 
+// Quick Payment Form Component - moved completely outside to prevent re-rendering issues
+const QuickPaymentForm = ({ 
+  recipient, 
+  setRecipient, 
+  amount, 
+  setAmount, 
+  memo, 
+  setMemo, 
+  onSendPayment 
+}: {
+  recipient: string;
+  setRecipient: (value: string) => void;
+  amount: string;
+  setAmount: (value: string) => void;
+  memo: string;
+  setMemo: (value: string) => void;
+  onSendPayment: () => void;
+}) => (
+  <div className="space-y-4">
+    <div className="grid gap-2">
+      <Label htmlFor="recipient">Recipient</Label>
+      <Input 
+        id="recipient" 
+        placeholder="Stellar address or user@domain.com"
+        value={recipient}
+        onChange={(e) => setRecipient(e.target.value)}
+      />
+    </div>
+    <div className="grid gap-2">
+      <Label htmlFor="amount">Amount (BD)</Label>
+      <Input 
+        id="amount" 
+        type="text" 
+        placeholder="50.00" 
+        value={amount}
+        onChange={(e) => {
+          // Only allow numbers and decimal point
+          const value = e.target.value;
+          if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            setAmount(value);
+          }
+        }}
+      />
+    </div>
+    <div className="grid gap-2">
+      <Label htmlFor="memo">Memo (Optional)</Label>
+      <Input 
+        id="memo" 
+        placeholder="For service..."
+        value={memo}
+        onChange={(e) => setMemo(e.target.value)}
+      />
+    </div>
+    <Button onClick={onSendPayment} className="w-full">Send BlueDollars</Button>
+  </div>
+);
 
 function DashboardPageContent() {
   const { keycloak, initialized } = useKeycloak();
@@ -108,7 +164,7 @@ function DashboardPageContent() {
           const bdAsset = data.data.find((a: any) => a.asset_code === 'BD');
           const asset = bdAsset || data.data[0];
           let code = asset.asset_code || asset.asset_type || 'Asset';
-          if (code === 'native') code = 'XML';
+          if (code === 'native') code = 'XLM';
           setWalletBalance(asset.balance);
           setWalletAsset(code);
         } else {
@@ -132,11 +188,21 @@ function DashboardPageContent() {
       return;
     }
 
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Amount',
+        description: 'Please enter a valid positive amount.',
+      });
+      return;
+    }
+
     const newTransaction: Omit<Transaction, 'id' | 'icon' | 'status' | 'date'> = {
       type: 'Sent',
       recipient: recipient,
       service: memo || 'Quick Payment',
-      amount: `-${parseFloat(amount).toFixed(2)} BD`,
+      amount: `-${numAmount.toFixed(2)} BD`,
     };
 
     addTransaction(newTransaction);
@@ -157,45 +223,17 @@ function DashboardPageContent() {
 
   const getUsername = () => {
     const preferredUsername = keycloak.tokenParsed?.preferred_username;
+    let username = preferredUsername;
     if (preferredUsername && preferredUsername.includes('@')) {
-      return preferredUsername.split('@')[0];
+      username = preferredUsername.split('@')[0];
     }
-    return preferredUsername;
+    if (username && typeof username === 'string' && username.length > 0) {
+      return username.charAt(0).toUpperCase() + username.slice(1);
+    }
+    return username;
   };
 
-  const QuickPaymentForm = () => (
-    <div className="space-y-4">
-        <div className="grid gap-2">
-            <Label htmlFor="recipient">Recipient</Label>
-            <Input 
-            id="recipient" 
-            placeholder="Stellar address or user@domain.com"
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-            />
-        </div>
-        <div className="grid gap-2">
-            <Label htmlFor="amount">Amount (BD)</Label>
-            <Input 
-            id="amount" 
-            type="number" 
-            placeholder="50.00" 
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            />
-        </div>
-        <div className="grid gap-2">
-            <Label htmlFor="memo">Memo (Optional)</Label>
-            <Input 
-            id="memo" 
-            placeholder="For service..."
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            />
-        </div>
-        <Button onClick={handleSendPayment} className="w-full">Send BlueDollars</Button>
-    </div>
-  );
+
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -240,7 +278,15 @@ function DashboardPageContent() {
               </div>
               <div className="space-y-4 pt-4 border-t">
                   <h3 className="font-medium">Quick Payment</h3>
-                  <QuickPaymentForm />
+                  <QuickPaymentForm
+                    recipient={recipient}
+                    setRecipient={setRecipient}
+                    amount={amount}
+                    setAmount={setAmount}
+                    memo={memo}
+                    setMemo={setMemo}
+                    onSendPayment={handleSendPayment}
+                  />
               </div>
             </CardContent>
           </Card>
@@ -303,8 +349,6 @@ function DashboardPageContent() {
                   <TableRow>
                     <TableHead>Type</TableHead>
                     <TableHead>Details</TableHead>
-                    <TableHead>Creator Email</TableHead>
-                    <TableHead>Entity Name</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -322,8 +366,6 @@ function DashboardPageContent() {
                         <div className="font-medium">{tx.recipient}</div>
                         <div className="text-sm text-muted-foreground">{tx.service}</div>
                       </TableCell>
-                      <TableCell>{tx.creatorEmail || '-'}</TableCell>
-                      <TableCell>{tx.entityName || '-'}</TableCell>
                       <TableCell className="text-right font-mono">{tx.amount}</TableCell>
                     </TableRow>
                   ))}
@@ -343,7 +385,15 @@ function DashboardPageContent() {
                         </div>
                         <div>
                             <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
-                            <div className="text-3xl font-bold">10,430.50 BD</div>
+                            {walletLoading ? (
+                              <div className="text-3xl font-bold">Loading...</div>
+                            ) : walletError ? (
+                              <div className="text-3xl font-bold text-red-500">{walletError}</div>
+                            ) : walletBalance ? (
+                              <div className="text-3xl font-bold">{parseFloat(walletBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {walletAsset}</div>
+                            ) : (
+                              <div className="text-3xl font-bold">-</div>
+                            )}
                         </div>
                     </div>
                 </CardContent>
@@ -356,7 +406,15 @@ function DashboardPageContent() {
                         <CardDescription>A quick way to send BlueDollars.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <QuickPaymentForm />
+                        <QuickPaymentForm
+                          recipient={recipient}
+                          setRecipient={setRecipient}
+                          amount={amount}
+                          setAmount={setAmount}
+                          memo={memo}
+                          setMemo={setMemo}
+                          onSendPayment={handleSendPayment}
+                        />
                     </CardContent>
                 </Card>
 

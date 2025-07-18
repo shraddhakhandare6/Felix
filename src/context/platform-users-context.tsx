@@ -36,7 +36,7 @@ export function PlatformUsersProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/users`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/tenants/Felix/users`, {
         headers: {
           'Authorization': `Bearer ${keycloak.token}`
         }

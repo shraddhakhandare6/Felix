@@ -80,7 +80,7 @@ export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDi
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!recipient) return;
 
-    const apiBaseUrl = 'http://localhost:5000';
+    const apiBaseUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}`;
     
     try {
         const response = await fetch(`${apiBaseUrl}/api/v1/wallets/issue`, {

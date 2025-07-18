@@ -68,7 +68,7 @@ export function EntityCreationForm({ onSuccess }: EntityCreationFormProps) {
     form.reset();
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/v1/tenants/Felix/entity/create`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/tenants/Felix/entity/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

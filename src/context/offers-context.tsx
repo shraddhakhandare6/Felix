@@ -32,8 +32,8 @@ export function OffersProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function fetchOffers() {
       try {
-        const buyRes = await fetch('http://localhost:5000/api/v1/offers/buy', { method: 'GET' });
-        const sellRes = await fetch('http://localhost:5000/api/v1/offers/sell', { method: 'GET' });
+        const buyRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/offers/buy`, { method: 'GET' });
+        const sellRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/offers/sell`, { method: 'GET' });
         const buyData = await buyRes.json();
         const sellData = await sellRes.json();
         let offers: Offer[] = [];
@@ -73,10 +73,10 @@ export function OffersProvider({ children }: { children: ReactNode }) {
     const offerWithId: Offer = {
       id: `offer_${Date.now()}`,
       status: 'Active',
-      date: newOffer.date || new Date().toISOString().split('T')[0],
-      creatorEmail: newOffer.creatorEmail,
-      entityName: newOffer.entityName,
       ...newOffer,
+      date: newOffer.date || new Date().toISOString().split('T')[0],
+      creatorEmail: newOffer.creatorEmail || '',
+      entityName: newOffer.entityName || '',
     };
     setMyOffers(prev => [offerWithId, ...prev]);
   };
