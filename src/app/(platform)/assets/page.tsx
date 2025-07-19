@@ -7,7 +7,8 @@ import { useUser } from '@/context/user-context';
 import { PageLoader } from '@/components/page-loader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Package, Landmark, TrendingUp, Shield, AlertCircle } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Users, Package, Landmark, TrendingUp, Shield, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface IssuedAsset {
   _links: {
@@ -50,6 +51,7 @@ export default function AssetsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userPublicKey, setUserPublicKey] = useState<string | null>(null);
+  const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
 
   // First fetch user's public key, then fetch issued assets
   useEffect(() => {
@@ -84,7 +86,7 @@ export default function AssetsPage() {
         setUserPublicKey(publicKey);
 
         // Step 2: Fetch issued assets using the user's public key
-        const assetsResponse = await fetch(`http://localhost:5000/api/v1/assets/issued/${publicKey}`);
+        const assetsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/assets/issued/${publicKey}`);
         
         if (!assetsResponse.ok) {
           throw new Error(`Failed to fetch assets: ${assetsResponse.status}`);
@@ -134,6 +136,17 @@ export default function AssetsPage() {
     return authorized + authorizedToMaintain + unauthorized;
   };
 
+  // Toggle asset expansion
+  const toggleAssetExpansion = (assetId: string) => {
+    const newExpanded = new Set(expandedAssets);
+    if (newExpanded.has(assetId)) {
+      newExpanded.delete(assetId);
+    } else {
+      newExpanded.add(assetId);
+    }
+    setExpandedAssets(newExpanded);
+  };
+
   if (isAccountLoading || isLoading) {
     return <PageLoader />;
   }
@@ -167,7 +180,7 @@ export default function AssetsPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {issuedAssets.map((asset) => (
             <Card key={asset.paging_token} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl font-bold">{asset.asset_code}</CardTitle>
                   <Landmark className="h-6 w-6 text-primary" />
@@ -178,79 +191,138 @@ export default function AssetsPage() {
                     {asset.flags.auth_required ? "Auth Required" : "No Auth"}
                   </Badge>
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Trustline Details */}
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-                    <Users className="h-4 w-4" /> Trustline Details
-                  </h4>
+                
+                {/* Quick Summary - Always Visible */}
+                <div className="mt-3 pt-3 border-t">
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Authorized:</span>
-                      <span className="font-medium">{asset.accounts.authorized}</span>
+                      <span className="text-muted-foreground">Total Issued:</span>
+                      <span className="font-semibold">{formatBalance(asset.balances.authorized)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total:</span>
+                      <span className="text-muted-foreground">Accounts:</span>
                       <span className="font-medium">{getTotalAccounts(asset.accounts)}</span>
                     </div>
                   </div>
                 </div>
+              </CardHeader>
+              
+              <CardContent className="pt-0">
+                <Collapsible 
+                  open={expandedAssets.has(asset.paging_token)}
+                  onOpenChange={() => toggleAssetExpansion(asset.paging_token)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <button className="w-full flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors text-sm font-medium">
+                      <span>View Details</span>
+                      {expandedAssets.has(asset.paging_token) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="space-y-4 mt-3 pt-3 border-t">
+                    {/* Trustline Details */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                        <Users className="h-4 w-4" /> Trustline Details
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Authorized:</span>
+                          <span className="font-medium">{asset.accounts.authorized}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Authorized to Maintain:</span>
+                          <span className="font-medium">{asset.accounts.authorized_to_maintain_liabilities}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Unauthorized:</span>
+                          <span className="font-medium">{asset.accounts.unauthorized}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total:</span>
+                          <span className="font-medium">{getTotalAccounts(asset.accounts)}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Balance Details */}
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-                    <Package className="h-4 w-4" /> Balance Details
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Authorized:</span>
-                      <span className="font-medium">{formatBalance(asset.balances.authorized)}</span>
+                    {/* Balance Details */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                        <Package className="h-4 w-4" /> Balance Details
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Authorized:</span>
+                          <span className="font-medium">{formatBalance(asset.balances.authorized)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Authorized to Maintain:</span>
+                          <span className="font-medium">{formatBalance(asset.balances.authorized_to_maintain_liabilities)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Unauthorized:</span>
+                          <span className="font-medium">{formatBalance(asset.balances.unauthorized)}</span>
+                        </div>
+                        <div className="flex justify-between pt-1 border-t">
+                          <span className="text-muted-foreground font-medium">Total Balance:</span>
+                          <span className="font-semibold">{formatBalance(getTotalBalance(asset.balances).toString())}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Issued:</span>
-                      <span className="font-semibold text-lg">{formatBalance(asset.balances.authorized)}</span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Additional Info */}
-                <div className="space-y-3 pt-2 border-t">
-                  <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" /> Additional Info
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Claimable:</span>
-                      <span className="font-medium">{formatBalance(asset.claimable_balances_amount)}</span>
+                    {/* Additional Info */}
+                    <div className="space-y-3 pt-2 border-t">
+                      <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" /> Additional Info
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Claimable:</span>
+                          <span className="font-medium">{formatBalance(asset.claimable_balances_amount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Liquidity:</span>
+                          <span className="font-medium">{formatBalance(asset.liquidity_pools_amount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Contracts:</span>
+                          <span className="font-medium">{formatBalance(asset.contracts_amount)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Asset Issuer:</span>
+                          <span className="font-medium text-xs truncate max-w-[120px]" title={asset.asset_issuer}>
+                            {asset.asset_issuer}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Liquidity:</span>
-                      <span className="font-medium">{formatBalance(asset.liquidity_pools_amount)}</span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Asset Flags */}
-                <div className="space-y-2 pt-2 border-t">
-                  <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-                    <Shield className="h-4 w-4" /> Asset Flags
-                  </h4>
-                  <div className="flex flex-wrap gap-1">
-                    {asset.flags.auth_revocable && (
-                      <Badge variant="outline" className="text-xs">Revocable</Badge>
-                    )}
-                    {asset.flags.auth_immutable && (
-                      <Badge variant="outline" className="text-xs">Immutable</Badge>
-                    )}
-                    {asset.flags.auth_clawback_enabled && (
-                      <Badge variant="outline" className="text-xs">Clawback</Badge>
-                    )}
-                    {!asset.flags.auth_revocable && !asset.flags.auth_immutable && !asset.flags.auth_clawback_enabled && (
-                      <Badge variant="outline" className="text-xs">Standard</Badge>
-                    )}
-                  </div>
-                </div>
+                    {/* Asset Flags */}
+                    <div className="space-y-2 pt-2 border-t">
+                      <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                        <Shield className="h-4 w-4" /> Asset Flags
+                      </h4>
+                      <div className="flex flex-wrap gap-1">
+                        {asset.flags.auth_revocable && (
+                          <Badge variant="outline" className="text-xs">Revocable</Badge>
+                        )}
+                        {asset.flags.auth_immutable && (
+                          <Badge variant="outline" className="text-xs">Immutable</Badge>
+                        )}
+                        {asset.flags.auth_clawback_enabled && (
+                          <Badge variant="outline" className="text-xs">Clawback</Badge>
+                        )}
+                        {!asset.flags.auth_revocable && !asset.flags.auth_immutable && !asset.flags.auth_clawback_enabled && (
+                          <Badge variant="outline" className="text-xs">Standard</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </CardContent>
             </Card>
           ))}

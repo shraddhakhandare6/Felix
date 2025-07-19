@@ -26,6 +26,7 @@ import {
   BadgeDollarSign,
   PlusCircle,
   Clock,
+  RefreshCw,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +39,8 @@ import { PageLoader } from '@/components/page-loader';
 import { useTransactions, type Transaction } from '@/context/transactions-context';
 import { useUser } from '@/context/user-context';
 import { useEntities } from '@/context/entity-context';
+import { useAccount } from '@/context/account-context';
+import { sendPayment } from '@/lib/api';
 
 // Quick Payment Form Component - moved completely outside to prevent re-rendering issues
 const QuickPaymentForm = ({ 
@@ -47,7 +50,8 @@ const QuickPaymentForm = ({
   setAmount, 
   memo, 
   setMemo, 
-  onSendPayment 
+  onSendPayment, 
+  isSending 
 }: {
   recipient: string;
   setRecipient: (value: string) => void;
@@ -56,6 +60,7 @@ const QuickPaymentForm = ({
   memo: string;
   setMemo: (value: string) => void;
   onSendPayment: () => void;
+  isSending: boolean;
 }) => (
   <div className="space-y-4">
     <div className="grid gap-2">
@@ -92,7 +97,9 @@ const QuickPaymentForm = ({
         onChange={(e) => setMemo(e.target.value)}
       />
     </div>
-    <Button onClick={onSendPayment} className="w-full">Send BlueDollars</Button>
+    <Button onClick={onSendPayment} className="w-full" disabled={isSending}>
+      {isSending ? 'Sending...' : 'Send BlueDollars'}
+    </Button>
   </div>
 );
 
@@ -103,9 +110,10 @@ function DashboardPageContent() {
   const { logout } = useAuth();
   const { user: currentUser } = useUser();
   const { entities } = useEntities();
+  const { balances, isLoading: isAccountLoading, error: accountError, refetchBalances } = useAccount();
 
   const { incomingRequests, outgoingRequests, payRequest, declineRequest, cancelRequest } = usePaymentRequests();
-  const { transactions, addTransaction } = useTransactions();
+  const { transactions, addTransaction, refetchTransactions } = useTransactions();
   const { toast } = useToast();
   
   const pendingIncoming = incomingRequests.filter((req) => req.status === 'Pending');
@@ -114,10 +122,7 @@ function DashboardPageContent() {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
-  const [walletBalance, setWalletBalance] = useState<string | null>(null);
-  const [walletAsset, setWalletAsset] = useState<string>('BD');
-  const [walletLoading, setWalletLoading] = useState(false);
-  const [walletError, setWalletError] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
   const recentTransactions = transactions.slice(0, 5);
 
@@ -141,44 +146,7 @@ function DashboardPageContent() {
     }
   }, [initialized, keycloak]);
 
-  // Fetch wallet balance for user
-  useEffect(() => {
-    if (!currentUser?.email) return;
-    setWalletLoading(true);
-    setWalletError(null);
-    setWalletBalance(null);
-    fetch(`http://localhost:5000/api/v1/wallets/balance/type/user/${currentUser.email}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || data.message || 'Failed to fetch wallet balance');
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          // Prefer BD, else show first asset
-          const bdAsset = data.data.find((a: any) => a.asset_code === 'BD');
-          const asset = bdAsset || data.data[0];
-          let code = asset.asset_code || asset.asset_type || 'Asset';
-          if (code === 'native') code = 'XLM';
-          setWalletBalance(asset.balance);
-          setWalletAsset(code);
-        } else {
-          throw new Error('No wallet balance found');
-        }
-      })
-      .catch((err) => {
-        setWalletError(err.message);
-        setWalletBalance(null);
-      })
-      .finally(() => setWalletLoading(false));
-  }, [currentUser?.email]);
-
-  const handleSendPayment = () => {
+  const handleSendPayment = async () => {
     if (!recipient || !amount) {
       toast({
         variant: 'destructive',
@@ -198,26 +166,73 @@ function DashboardPageContent() {
       return;
     }
 
-    const newTransaction: Omit<Transaction, 'id' | 'icon' | 'status' | 'date'> = {
-      type: 'Sent',
-      recipient: recipient,
-      service: memo || 'Quick Payment',
-      amount: `-${numAmount.toFixed(2)} BD`,
-    };
+    if (!currentUser?.email) {
+      toast({
+        variant: 'destructive',
+        title: 'User not found',
+        description: 'Please log in again.',
+      });
+      return;
+    }
 
-    addTransaction(newTransaction);
+    setIsSending(true);
 
-    toast({
-      title: 'Payment Sent',
-      description: `${amount} BD successfully sent to ${recipient}.`,
-    });
+    try {
+      console.log('Sending payment:', { recipient, amount: numAmount, sender: currentUser.email });
+      
+      // Send payment via backend API
+      const result = await sendPayment({
+        recipient,
+        amount: numAmount.toString(),
+        memo,
+        senderEmail: currentUser.email
+      });
 
-    setRecipient('');
-    setAmount('');
-    setMemo('');
+      console.log('Payment result:', result);
+
+      // Add transaction to local state (optimistic update)
+      const newTransaction: Omit<Transaction, 'id' | 'icon' | 'status' | 'date'> = {
+        type: 'Sent',
+        recipient: recipient,
+        service: memo || 'Quick Payment',
+        amount: `-${numAmount.toFixed(2)} BD`,
+      };
+
+      addTransaction(newTransaction);
+
+      // Wait a bit longer to ensure backend has processed the transaction
+      console.log('Waiting for backend to process transaction...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Refetch balance to show updated amount
+      console.log('Refetching balances...');
+      await refetchBalances();
+      
+      // Refetch transactions to get the latest from backend
+      console.log('Refetching transactions...');
+      await refetchTransactions();
+
+      toast({
+        title: 'Payment Sent',
+        description: `${amount} BD successfully sent to ${recipient}.`,
+      });
+
+      setRecipient('');
+      setAmount('');
+      setMemo('');
+    } catch (error) {
+      console.error('Payment failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Payment Failed',
+        description: error instanceof Error ? error.message : 'An error occurred while sending the payment.',
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  if (!initialized) {
+  if (!initialized || isAccountLoading) {
     return <PageLoader />;
   }
 
@@ -265,16 +280,29 @@ function DashboardPageContent() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
-                  {walletLoading ? (
+                  {isAccountLoading ? (
                     <div className="text-3xl font-bold">Loading...</div>
-                  ) : walletError ? (
-                    <div className="text-3xl font-bold text-red-500">{walletError}</div>
-                  ) : walletBalance ? (
-                    <div className="text-3xl font-bold">{parseFloat(walletBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {walletAsset}</div>
+                  ) : accountError ? (
+                    <div className="text-3xl font-bold text-red-500">{accountError.message}</div>
+                  ) : balances.length > 0 ? (
+                     (() => {
+                        const bdAsset = balances.find(a => a.asset_code === 'BD');
+                        const asset = bdAsset || balances[0];
+                        let code = asset.asset_code || asset.asset_type || 'Asset';
+                        if (code === 'native') code = 'XLM';
+                        return (
+                          <div className="text-3xl font-bold">
+                            {parseFloat(asset.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {code}
+                          </div>
+                        );
+                      })()
                   ) : (
                     <div className="text-3xl font-bold">-</div>
                   )}
                 </div>
+                <Button variant="ghost" onClick={refetchBalances} className="ml-auto">
+                  <RefreshCw className="w-5 h-5" />
+                </Button>
               </div>
               <div className="space-y-4 pt-4 border-t">
                   <h3 className="font-medium">Quick Payment</h3>
@@ -286,6 +314,7 @@ function DashboardPageContent() {
                     memo={memo}
                     setMemo={setMemo}
                     onSendPayment={handleSendPayment}
+                    isSending={isSending}
                   />
               </div>
             </CardContent>
@@ -385,12 +414,22 @@ function DashboardPageContent() {
                         </div>
                         <div>
                             <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
-                            {walletLoading ? (
+                            {isAccountLoading ? (
                               <div className="text-3xl font-bold">Loading...</div>
-                            ) : walletError ? (
-                              <div className="text-3xl font-bold text-red-500">{walletError}</div>
-                            ) : walletBalance ? (
-                              <div className="text-3xl font-bold">{parseFloat(walletBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {walletAsset}</div>
+                            ) : accountError ? (
+                              <div className="text-3xl font-bold text-red-500">{accountError.message}</div>
+                            ) : balances.length > 0 ? (
+                              (() => {
+                                const bdAsset = balances.find(a => a.asset_code === 'BD');
+                                const asset = bdAsset || balances[0];
+                                let code = asset.asset_code || asset.asset_type || 'Asset';
+                                if (code === 'native') code = 'XLM';
+                                return (
+                                  <div className="text-3xl font-bold">
+                                    {parseFloat(asset.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {code}
+                                  </div>
+                                );
+                              })()
                             ) : (
                               <div className="text-3xl font-bold">-</div>
                             )}
@@ -399,7 +438,7 @@ function DashboardPageContent() {
                 </CardContent>
             </Card>
 
-            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>Quick Payment</CardTitle>
@@ -414,6 +453,7 @@ function DashboardPageContent() {
                           memo={memo}
                           setMemo={setMemo}
                           onSendPayment={handleSendPayment}
+                          isSending={isSending}
                         />
                     </CardContent>
                 </Card>

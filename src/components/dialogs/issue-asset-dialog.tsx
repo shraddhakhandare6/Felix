@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,6 +33,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAssets } from '@/context/asset-context';
 import { useTransactions } from '@/context/transactions-context';
+import { issueAsset } from '@/lib/api';
 
 const formSchema = z.object({
   recipient: z.string(),
@@ -56,6 +57,7 @@ export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDi
   const { toast } = useToast();
   const { assets } = useAssets();
   const { addTransaction } = useTransactions();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -80,23 +82,17 @@ export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDi
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!recipient) return;
 
-    const apiBaseUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}`;
+    setIsLoading(true);
     
     try {
-        const response = await fetch(`${apiBaseUrl}/api/v1/wallets/issue`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                assetCode: values.assetCode,
-                recepient: values.recipient, // API expects 'recepient'
-                isEntity: recipient.isEntity,
-                amount: values.amount
-            })
+        const result = await issueAsset({
+            assetCode: values.assetCode,
+            recipient: values.recipient,
+            isEntity: recipient.isEntity,
+            amount: values.amount
         });
 
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
+        if (!result.success) {
             throw new Error(result.meta?.message || 'Failed to issue asset.');
         }
         
@@ -115,11 +111,14 @@ export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDi
         onOpenChange(false);
 
     } catch (error) {
+        console.error('Asset issuance failed:', error);
         toast({
             variant: 'destructive',
             title: 'Issuance Failed',
             description: error instanceof Error ? error.message : 'An unknown error occurred.'
         });
+    } finally {
+        setIsLoading(false);
     }
   }
 
@@ -184,7 +183,9 @@ export function IssueAssetDialog({ open, onOpenChange, recipient }: IssueAssetDi
                     </FormItem>
                 )}
                 />
-                <Button type="submit" className="w-full">Send</Button>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Issuing...' : 'Issue Asset'}
+                </Button>
             </form>
             </Form>
         </DialogContent>
