@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { BadgeDollarSign, CreditCard } from "lucide-react"
+import { BadgeDollarSign, CreditCard, RefreshCw } from "lucide-react"
 import { useTransactions, type Transaction as TxType } from '@/context/transactions-context';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,8 @@ import { Label } from '@/components/ui/label';
 import { useUser } from '@/context/user-context';
 import { useEntities } from '@/context/entity-context';
 import { useToast } from '@/hooks/use-toast';
+import { useAccount } from '@/context/account-context';
+import { sendPayment } from '@/lib/api';
 
 const TransactionTable = ({ 
   transactions, 
@@ -100,7 +102,8 @@ const QuickPaymentForm = ({
   setAmount, 
   memo, 
   setMemo, 
-  onSendPayment 
+  onSendPayment,
+  isSending
 }: {
   recipient: string;
   setRecipient: (value: string) => void;
@@ -109,6 +112,7 @@ const QuickPaymentForm = ({
   memo: string;
   setMemo: (value: string) => void;
   onSendPayment: () => void;
+  isSending: boolean;
 }) => (
   <div className="space-y-4">
     <div className="grid gap-2">
@@ -145,7 +149,9 @@ const QuickPaymentForm = ({
         onChange={(e) => setMemo(e.target.value)}
       />
     </div>
-    <Button onClick={onSendPayment} className="w-full">Send BlueDollars</Button>
+    <Button onClick={onSendPayment} className="w-full" disabled={isSending}>
+      {isSending ? 'Sending...' : 'Send BlueDollars'}
+    </Button>
   </div>
 );
 
@@ -155,10 +161,11 @@ interface WalletDisplayProps {
 
 export function WalletDisplay({ entityName }: WalletDisplayProps) {
   const searchParams = useSearchParams();
-  const { transactions, addTransaction } = useTransactions();
+  const { transactions, addTransaction, refetchTransactions } = useTransactions();
   const { user } = useUser();
   const { entities } = useEntities();
   const { toast } = useToast();
+  const { balances, isLoading: isAccountLoading, error: accountError, refetchBalances } = useAccount();
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -168,11 +175,7 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
-
-  // Wallet balance state
-  const [balances, setBalances] = useState<any[]>([]);
-  const [balanceLoading, setBalanceLoading] = useState(false);
-  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
   // Entity transaction state
   const [entityTransactions, setEntityTransactions] = useState<TxType[]>([]);
@@ -195,7 +198,7 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
   }
 
   // Handle Quick Payment
-  const handleSendPayment = () => {
+  const handleSendPayment = async () => {
     if (!recipient || !amount) {
       toast({
         variant: 'destructive',
@@ -215,23 +218,70 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
       return;
     }
 
-    const newTransaction: Omit<TxType, 'id' | 'icon' | 'status' | 'date'> = {
-      type: 'Sent',
-      recipient: recipient,
-      service: memo || 'Quick Payment',
-      amount: `-${numAmount.toFixed(2)} BD`,
-    };
+    if (!user.email) {
+      toast({
+        variant: 'destructive',
+        title: 'User not found',
+        description: 'Please log in again.',
+      });
+      return;
+    }
 
-    addTransaction(newTransaction);
+    setIsSending(true);
 
-    toast({
-      title: 'Payment Sent',
-      description: `${amount} BD successfully sent to ${recipient}.`,
-    });
+    try {
+      console.log('Sending payment:', { recipient, amount: numAmount, sender: user.email });
+      
+      // Send payment via backend API
+      const result = await sendPayment({
+        recipient,
+        amount: numAmount.toString(),
+        memo,
+        senderEmail: user.email
+      });
 
-    setRecipient('');
-    setAmount('');
-    setMemo('');
+      console.log('Payment result:', result);
+
+      // Add transaction to local state (optimistic update)
+      const newTransaction: Omit<TxType, 'id' | 'icon' | 'status' | 'date'> = {
+        type: 'Sent',
+        recipient: recipient,
+        service: memo || 'Quick Payment',
+        amount: `-${numAmount.toFixed(2)} BD`,
+      };
+
+      addTransaction(newTransaction);
+
+      // Wait a bit longer to ensure backend has processed the transaction
+      console.log('Waiting for backend to process transaction...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Refetch balance to show updated amount
+      console.log('Refetching balances...');
+      await refetchBalances();
+      
+      // Refetch transactions to get the latest from backend
+      console.log('Refetching transactions...');
+      await refetchTransactions();
+
+      toast({
+        title: 'Payment Sent',
+        description: `${amount} BD successfully sent to ${recipient}.`,
+      });
+
+      setRecipient('');
+      setAmount('');
+      setMemo('');
+    } catch (error) {
+      console.error('Payment failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Payment Failed',
+        description: error instanceof Error ? error.message : 'An error occurred while sending the payment.',
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // Fetch entity transactions
@@ -260,7 +310,7 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
       const entityPublicKey = exportData.data[0].public_key;
 
       // Then fetch transactions for the entity using the balance API
-      const balanceUrl = `http://localhost:5000/api/v1/wallets/balance/type/entity/${entityOwnerEmail}?creatorEmail=${encodeURIComponent(user.email)}`;
+      const balanceUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/wallets/balance/type/entity/${entityOwnerEmail}?creatorEmail=${encodeURIComponent(user.email)}`;
       
       const balanceResponse = await fetch(balanceUrl, {
         method: 'GET',
@@ -311,41 +361,41 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
   // Fetch wallet balances
   React.useEffect(() => {
     // Add creatorEmail as a query param if needed
-    let url = `http://localhost:5000/api/v1/wallets/balance/type/${walletType}/${walletEmail}`;
+    let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/wallets/balance/type/${walletType}/${walletEmail}`;
     if (creatorEmail && creatorEmail !== walletEmail) {
       url += `?creatorEmail=${encodeURIComponent(creatorEmail)}`;
     }
-    setBalanceLoading(true);
-    setBalanceError(null);
-    setBalances([]);
+    // setBalanceLoading(true); // This state is now managed by useAccount
+    // setBalanceError(null); // This state is now managed by useAccount
+    // setBalances([]); // This state is now managed by useAccount
     if (!walletEmail) {
-      setBalanceError('No email found for wallet.');
-      setBalanceLoading(false);
+      // setBalanceError('No email found for wallet.'); // This state is now managed by useAccount
+      // setBalanceLoading(false); // This state is now managed by useAccount
       return;
     }
-    fetch(url, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || data.message || 'Failed to fetch wallet balances');
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.success && Array.isArray(data.data)) {
-          setBalances(data.data);
-        } else {
-          throw new Error('Invalid response from server');
-        }
-      })
-      .catch((err) => {
-        setBalanceError(err.message);
-        setBalances([]);
-      })
-      .finally(() => setBalanceLoading(false));
+    // fetch(url, { // This fetch call is now handled by useAccount
+    //   method: 'GET',
+    //   headers: { 'Content-Type': 'application/json' },
+    // })
+    //   .then(async (res) => {
+    //     if (!res.ok) {
+    //       const data = await res.json().catch(() => ({}));
+    //       throw new Error(data.error || data.message || 'Failed to fetch wallet balances');
+    //     }
+    //     return res.json();
+    //   })
+    //   .then((data) => {
+    //     if (data.success && Array.isArray(data.data)) {
+    //       setBalances(data.data);
+    //     } else {
+    //       throw new Error('Invalid response from server');
+    //     }
+    //   })
+    //   .catch((err) => {
+    //     setBalanceError(err.message);
+    //     setBalances([]);
+    //   })
+    //   .finally(() => setBalanceLoading(false));
   }, [walletType, walletEmail, creatorEmail, entityParam]);
 
   // Fetch entity transactions when entity is selected
@@ -415,50 +465,83 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
     // Add more mappings as needed
   };
 
-  return (
-    <>
-      {entityName && (
-        <div className="mb-4">
-          <Button variant="secondary" onClick={() => setIsExportDialogOpen(true)}>
-            Export Entity Wallet
-          </Button>
-          <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Wallet for Entity: {entityName}</DialogTitle>
-                <DialogDescription>
-                  Export the public and secret keys for this entity's wallet. You will need to provide the entity owner's email.
-                </DialogDescription>
-              </DialogHeader>
-              {exportResult ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Public Key</label>
-                    <Input readOnly value={exportResult.publicKey} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Secret Key</label>
-                    <Input readOnly value={exportResult.secretKey} type="text" />
-                  </div>
-                </div>
-              ) : (
-                <Button onClick={handleExportWallet} disabled={exportLoading} className="w-full">
-                  {exportLoading ? 'Exporting...' : 'Export Wallet'}
-                </Button>
-              )}
-              {exportError && <div className="text-red-500 mt-2">{exportError}</div>}
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
+  const handleCreateTrustline = async (assetCode: string, issuer: string) => {
+    // This function will need to be implemented
+    // It should make an API call to create a trustline
+    toast({
+      title: 'Trustline creation initiated',
+      description: `Creating trustline for ${assetCode}...`
+    });
+  }
 
-      {/* Wallet Overview Section */}
+  if (isAccountLoading) {
+    return (
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Wallet Overview</CardTitle>
-          <CardDescription>
-            Your current balance and a quick way to send BlueDollars.
-          </CardDescription>
+          <CardDescription>Loading wallet details...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Loading...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <>
+      <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Wallet Keys</DialogTitle>
+            <DialogDescription>
+              These are your wallet keys. Keep them secure and do not share them.
+            </DialogDescription>
+          </DialogHeader>
+          {exportLoading && <p>Loading...</p>}
+          {exportError && <p className="text-red-500">{exportError}</p>}
+          {exportResult && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="publicKey">Public Key</Label>
+                <Input id="publicKey" value={exportResult.publicKey} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="secretKey">Secret Key</Label>
+                <Input id="secretKey" value={exportResult.secretKey} readOnly />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Wallet Overview</CardTitle>
+              <CardDescription>
+                Your current balance and a quick way to send BlueDollars.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                console.log('Manual balance refresh requested');
+                await refetchBalances();
+                await refetchTransactions();
+                toast({
+                  title: 'Balance Refreshed',
+                  description: 'Your wallet balance has been updated.',
+                });
+              }}
+              disabled={isAccountLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isAccountLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4 p-6 rounded-lg bg-primary/10">
@@ -467,10 +550,10 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
             </div>
             <div>
               <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
-              {balanceLoading ? (
+              {isAccountLoading ? (
                 <div className="text-3xl font-bold">Loading...</div>
-              ) : balanceError ? (
-                <div className="text-3xl font-bold text-red-500">{balanceError}</div>
+              ) : accountError ? (
+                <div className="text-3xl font-bold text-red-500">{accountError.message}</div>
               ) : balances.length > 0 ? (
                 (() => {
                   const bdAsset = balances.find((a: any) => a.asset_code === 'BD');
@@ -499,16 +582,17 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
               memo={memo}
               setMemo={setMemo}
               onSendPayment={handleSendPayment}
+              isSending={isSending}
             />
           </div>
         </CardContent>
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {balanceLoading ? (
+        {isAccountLoading ? (
           <Card><CardContent>Loading balances...</CardContent></Card>
-        ) : balanceError ? (
-          <Card><CardContent className="text-red-500">{balanceError}</CardContent></Card>
+        ) : accountError ? (
+          <Card><CardContent className="text-red-500">{accountError.message}</CardContent></Card>
         ) : balances.length === 0 ? (
           <Card><CardContent>No balances found.</CardContent></Card>
         ) : (
@@ -540,12 +624,7 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
         <CardHeader>
           <CardTitle>Transaction History</CardTitle>
           <CardDescription>
-            {entityName 
-              ? `Displaying transactions for entity: ${entityName}`
-              : nameFilter
-                ? `Displaying transactions for "${nameFilter}"`
-                : 'A complete log of your account activity.'
-            }
+            A record of all transactions on your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -556,37 +635,21 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
               <TabsTrigger value="received">Received</TabsTrigger>
               <TabsTrigger value="trades">Trades</TabsTrigger>
             </TabsList>
-            <TabsContent value="all" className="mt-4">
-              <TransactionTable 
-                transactions={filteredTransactions} 
-                isLoading={entityName ? transactionLoading : false}
-                error={entityName ? transactionError : null}
-              />
+            <TabsContent value="all">
+              <TransactionTable transactions={filteredTransactions} isLoading={transactionLoading} error={transactionError} />
             </TabsContent>
-            <TabsContent value="sent" className="mt-4">
-              <TransactionTable 
-                transactions={sentTransactions} 
-                isLoading={entityName ? transactionLoading : false}
-                error={entityName ? transactionError : null}
-              />
+            <TabsContent value="sent">
+              <TransactionTable transactions={sentTransactions} isLoading={transactionLoading} error={transactionError} />
             </TabsContent>
-            <TabsContent value="received" className="mt-4">
-              <TransactionTable 
-                transactions={receivedTransactions} 
-                isLoading={entityName ? transactionLoading : false}
-                error={entityName ? transactionError : null}
-              />
+            <TabsContent value="received">
+              <TransactionTable transactions={receivedTransactions} isLoading={transactionLoading} error={transactionError} />
             </TabsContent>
-            <TabsContent value="trades" className="mt-4">
-              <TransactionTable 
-                transactions={tradeTransactions} 
-                isLoading={entityName ? transactionLoading : false}
-                error={entityName ? transactionError : null}
-              />
+            <TabsContent value="trades">
+              <TransactionTable transactions={tradeTransactions} isLoading={transactionLoading} error={transactionError} />
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
     </>
-  )
+  );
 }

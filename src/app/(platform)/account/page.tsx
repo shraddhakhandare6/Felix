@@ -145,7 +145,7 @@ export default function AccountPage() {
     if (activeTab === "export" && user.email) {
       setIsExportLoading(true);
       setExportError(null);
-      fetch("http://localhost:5000/api/v1/wallets/export", {
+      fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/wallets/export`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email }),
