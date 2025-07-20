@@ -6,7 +6,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useKeycloak } from '@react-keycloak/web';
 import { useRouter, usePathname } from 'next/navigation';
 import type { KeycloakProfile, KeycloakTokenParsed } from 'keycloak-js';
-import { PageLoader } from '@/components/page-loader';
+import { FancyLoader } from '@/components/ui/fancy-loader';
 import { useUser } from './user-context';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   
   if (!initialized) {
-    return <PageLoader />;
+    return <FancyLoader />;
   }
 
   if (initialized && !isKeycloakReady && !isPublicPage(pathname)) {
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
   
   if (isKeycloakReady && !keycloak.authenticated && !isPublicPage(pathname)) {
-    return <PageLoader />;
+    return <FancyLoader />;
   }
 
   return (

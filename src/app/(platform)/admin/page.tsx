@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { PlusCircle, Users, Building2, Coins, Shield, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { PageLoader } from '@/components/page-loader';
+import { FancyLoader } from '@/components/ui/fancy-loader';
 import { IssueAssetDialog } from '@/components/dialogs/issue-asset-dialog';
 
 // A unified type for recipients to simplify dialog handling
@@ -80,8 +80,8 @@ export default function AdminPage() {
     setIsIssueAssetDialogOpen(true);
   };
 
-  if (authLoading || !roles.includes('realm-admin')) {
-    return <PageLoader />;
+  if (isLoading) {
+    return <FancyLoader />;
   }
 
   return (

@@ -34,7 +34,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useToast } from '@/hooks/use-toast';
-import { PageLoader } from '@/components/page-loader';
+import { FancyLoader } from '@/components/ui/fancy-loader';
 import { ChevronLeft, Settings, Save, ArrowLeft } from 'lucide-react';
 
 const serviceFormSchema = z.object({
@@ -279,7 +279,7 @@ function ServiceDetailContent() {
 
 export default function ServiceDetailPage() {
     return (
-        <Suspense fallback={<PageLoader />}>
+        <Suspense fallback={<FancyLoader />}>
             <ServiceDetailContent />
         </Suspense>
     )

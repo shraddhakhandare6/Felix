@@ -2,7 +2,7 @@
 'use client';
 
 import React, { Suspense, useEffect, useState } from 'react';
-import { PageLoader } from '@/components/page-loader';
+import { FancyLoader } from '@/components/ui/fancy-loader';
 import { WalletDisplay } from '@/components/wallet-display';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Wallet } from 'lucide-react';
@@ -58,7 +58,7 @@ function WalletPageContent() {
 
 export default function WalletPage() {
   return (
-    <Suspense fallback={<PageLoader />}>
+    <Suspense fallback={<FancyLoader />}>
       <WalletPageContent />
     </Suspense>
   )

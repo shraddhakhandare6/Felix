@@ -6,7 +6,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { useRouter, usePathname } from 'next/navigation';
 import keycloak from '@/lib/keycloak';
 import type { KeycloakProfile } from 'keycloak-js';
-import { PageLoader } from '@/components/page-loader';
+import { FancyLoader } from '@/components/ui/fancy-loader';
 import { useUser } from './user-context';
 
 interface AuthContextType {
@@ -115,11 +115,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   if (loading) {
-    return <PageLoader />;
+    return <FancyLoader />;
   }
   
   if (!isAuthenticated && !isPublicPage(pathname)) {
-      return <PageLoader />;
+      return <FancyLoader />;
   }
 
   return (

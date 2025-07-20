@@ -1,5 +1,4 @@
-import { PageLoader } from '@/components/page-loader';
-
+import { FancyLoader } from '@/components/ui/fancy-loader';
 export default function Loading() {
-  return <PageLoader />;
+  return <FancyLoader />;
 }
