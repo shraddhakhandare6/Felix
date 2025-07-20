@@ -94,23 +94,37 @@ export function AssetCreationForm({ onSuccess }: AssetCreationFormProps) {
   }
 
   return (
+    <div className="max-w-lg w-full mx-auto p-0">
+      <div className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-6 transition-all duration-300 animate-fade-in">
+        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Create Asset</h2>
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="assetCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Asset Code</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Asset Code</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., BD, BTC" {...field} />
+                    <Input placeholder="e.g., BD, BTC" {...field} className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">Create Asset</Button>
+            <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group text-white focus-visible:outline-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500">
+              Create Asset
+            </Button>
       </form>
     </Form>
+      </div>
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(16px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-fade-in { animation: fade-in 0.5s cubic-bezier(0.4,0,0.2,1); }
+      `}</style>
+    </div>
   );
 }

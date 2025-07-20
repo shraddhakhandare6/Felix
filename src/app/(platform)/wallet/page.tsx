@@ -48,25 +48,8 @@ function WalletPageContent() {
             </div>
           </div>
           
-          {/* Main Wallet Card */}
-          <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
-            <CardHeader className="pb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg">
-                  <Wallet className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-2xl font-bold">Your Digital Assets</CardTitle>
-                  <CardDescription className="text-base">
-                    View your balances, send payments, and track transaction history
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-      <WalletDisplay />
-            </CardContent>
-          </Card>
+          {/* Wallet Display Only */}
+          <WalletDisplay />
         </div>
       </div>
     </div>

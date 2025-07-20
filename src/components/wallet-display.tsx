@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -42,7 +42,7 @@ const TransactionTable = ({
   error?: string | null;
 }) => {
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 5;
   const totalPages = Math.ceil(transactions.length / pageSize);
   const paginated = transactions.slice((page - 1) * pageSize, page * pageSize);
 
@@ -118,7 +118,7 @@ const TransactionTable = ({
             variant="outline" 
             onClick={() => setPage((p) => Math.max(1, p - 1))} 
             disabled={page === 1}
-            className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+            className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-800 hover:text-white hover:border-blue-800 dark:hover:bg-green-900 dark:hover:text-green-300 dark:hover:border-green-400 transition-colors duration-200"
           >
             Previous
           </Button>
@@ -127,7 +127,7 @@ const TransactionTable = ({
             variant="outline" 
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))} 
             disabled={page === totalPages}
-            className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+            className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-800 hover:text-white hover:border-blue-800 dark:hover:bg-green-900 dark:hover:text-green-300 dark:hover:border-green-400 transition-colors duration-200"
           >
             Next
           </Button>
@@ -506,6 +506,9 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
     });
   }
 
+  const [showSparkle, setShowSparkle] = useState(false);
+  const sparkleTimeout = useRef<NodeJS.Timeout | null>(null);
+
   if (isAccountLoading) {
     return (
       <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
@@ -598,13 +601,35 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
                   title: 'Balance Refreshed',
                   description: 'Your wallet balance has been updated.',
                 });
+                setShowSparkle(true);
+                if (sparkleTimeout.current) clearTimeout(sparkleTimeout.current);
+                sparkleTimeout.current = setTimeout(() => setShowSparkle(false), 1200);
               }}
               disabled={isAccountLoading}
-              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+              className="bg-transparent border border-blue-600 text-blue-700 font-semibold shadow-lg transition-colors duration-200 group hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-800 hover:text-white hover:font-bold"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isAccountLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-4 w-4 mr-2 transition-colors duration-200 group-hover:text-white ${isAccountLoading ? 'animate-spin' : ''}`} />
+              <span className="transition-colors duration-200 group-hover:text-white group-hover:font-bold">Refresh</span>
             </Button>
+          {/* Sparkle/Glitter Effect Overlay */}
+          {showSparkle && (
+            <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center animate-fade-in-out">
+              {/* SVG or CSS sparkles */}
+              <div className="absolute inset-0 overflow-hidden">
+                {[...Array(24)].map((_, i) => (
+                  <span
+                    key={i}
+                    className="absolute block w-2 h-2 rounded-full bg-gradient-to-br from-blue-400 via-cyan-300 to-green-400 opacity-80 animate-sparkle"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      animationDelay: `${Math.random() * 0.7}s`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

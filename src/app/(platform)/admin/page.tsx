@@ -283,7 +283,7 @@ export default function AdminPage() {
                               variant="outline" 
                               size="sm" 
                               onClick={() => handleIssueAssetClick({ ...user, isEntity: false })}
-                              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                              className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white border-0 shadow-lg hover:shadow-xl transition-colors duration-200 group"
                             >
                               <Coins className="w-3 h-3 mr-1" />
                             Issue Asset
@@ -306,7 +306,7 @@ export default function AdminPage() {
                   size="sm"
                   onClick={() => setUserCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={userCurrentPage === 1}
-                      className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                  className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-800 hover:text-white hover:border-blue-800 dark:hover:bg-green-900 dark:hover:text-green-300 dark:hover:border-green-400 transition-colors duration-200"
                 >
                       <ChevronLeft className="w-3 h-3 mr-1" />
                   Previous
@@ -316,7 +316,7 @@ export default function AdminPage() {
                   size="sm"
                   onClick={() => setUserCurrentPage((prev) => Math.min(prev + 1, userTotalPages))}
                   disabled={userCurrentPage === userTotalPages}
-                      className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                  className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-800 hover:text-white hover:border-blue-800 dark:hover:bg-green-900 dark:hover:text-green-300 dark:hover:border-green-400 transition-colors duration-200"
                 >
                   Next
                       <ChevronRight className="w-3 h-3 ml-1" />
@@ -369,7 +369,7 @@ export default function AdminPage() {
                               variant="outline" 
                               size="sm" 
                               onClick={() => handleIssueAssetClick({ name: entity.name, email: entity.ownerEmail, isEntity: true })}
-                              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                              className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white border-0 shadow-lg hover:shadow-xl transition-colors duration-200 group"
                             >
                               <Coins className="w-3 h-3 mr-1" />
                             Issue Asset
@@ -392,7 +392,7 @@ export default function AdminPage() {
                     size="sm"
                     onClick={() => setEntityCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={entityCurrentPage === 1}
-                      className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                    className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 hover:bg-green-900 hover:text-green-300 hover:border-green-400 dark:hover:bg-blue-800 dark:hover:text-white dark:hover:border-blue-800 transition-colors duration-200"
                   >
                       <ChevronLeft className="w-3 h-3 mr-1" />
                     Previous
@@ -402,7 +402,7 @@ export default function AdminPage() {
                     size="sm"
                     onClick={() => setEntityCurrentPage((prev) => Math.min(prev + 1, entityTotalPages))}
                     disabled={entityCurrentPage === entityTotalPages}
-                      className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                    className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 hover:bg-green-900 hover:text-green-300 hover:border-green-400 dark:hover:bg-blue-800 dark:hover:text-white dark:hover:border-blue-800 transition-colors duration-200"
                   >
                     Next
                       <ChevronRight className="w-3 h-3 ml-1" />
