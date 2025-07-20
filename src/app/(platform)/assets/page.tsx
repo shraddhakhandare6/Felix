@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount } from '@/context/account-context';
 import { useUser } from '@/context/user-context';
-import { PageLoader } from '@/components/page-loader';
+import { FancyLoader } from '@/components/ui/fancy-loader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -165,7 +165,7 @@ export default function AssetsPage() {
   };
 
   if (isAccountLoading || isLoading) {
-    return <PageLoader />;
+    return <FancyLoader />;
   }
 
   return (
@@ -464,8 +464,8 @@ export default function AssetsPage() {
                             </div>
                           </div>
                         </div>
+                        </div>
                       </div>
-                          </div>
                     </div>
                   </>
                 );

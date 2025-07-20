@@ -42,7 +42,7 @@ import { usePaymentRequests } from '@/context/payment-requests-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { PageLoader } from '@/components/page-loader';
+import { FancyLoader } from '@/components/ui/fancy-loader';
 import { useTransactions, type Transaction } from '@/context/transactions-context';
 import { useUser } from '@/context/user-context';
 import { useEntities } from '@/context/entity-context';
@@ -264,7 +264,7 @@ function DashboardPageContent() {
   };
 
   if (!initialized || isAccountLoading) {
-    return <PageLoader />;
+    return <FancyLoader />;
   }
 
   const getUsername = () => {
@@ -602,7 +602,7 @@ function DashboardPageContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<PageLoader />}>
+    <Suspense fallback={<FancyLoader />}>
       <DashboardPageContent />
     </Suspense>
   );

@@ -108,79 +108,13 @@ export function AppSidebar() {
       {/* Floating accent */}
       <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-20 animate-bounce pointer-events-none"></div>
       <div className="absolute top-1/2 left-0 w-3 h-3 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full opacity-15 animate-pulse pointer-events-none"></div>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full min-h-0">
         <SidebarHeader>
           <div className="flex items-center gap-3 p-4">
             <Logo className="w-10 h-10 text-primary drop-shadow-lg" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Felix</h1>
-          </div>
-        </SidebarHeader>
-        <SidebarFooter>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className={cn(buttonVariants({ variant: 'ghost' }), `w-full justify-start text-left gap-3 p-4 rounded-xl h-auto bg-primary/10 group transition-all duration-200
-                hover:bg-gradient-to-r hover:from-blue-800/70 hover:to-green-700/70 hover:text-white hover:backdrop-blur-md
-                dark:hover:bg-gradient-to-r dark:hover:from-blue-900/80 dark:hover:to-green-800/80 dark:hover:text-white
-                `)}> 
-                <Avatar className="h-10 w-10 flex items-center justify-center bg-primary text-primary-foreground">
-                  <User className="h-6 w-6" />
-                </Avatar>
-                <div className="flex flex-col items-start">
-                  <span className="text-sm font-semibold group-hover:text-accent-foreground">{user.username}</span>
-                  <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/90">{user.email}</span>
-                </div>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 mb-2 ml-2" align="end" side="bottom" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.username}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.email}
-            </p>
-          </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                  <Link href="/account">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Profile Settings</span>
-                  </Link>
-              </DropdownMenuItem>
-               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <span className="flex items-center gap-2">
-                    <Sun className="h-4 w-4 mr-1 text-yellow-400 dark:text-gray-400 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="h-4 w-4 mr-1 text-blue-500 dark:text-yellow-300 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span>Theme</span>
-                  </span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent className="backdrop-blur-md bg-white/80 dark:bg-gray-900/90 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl rounded-xl p-1">
-                    <DropdownMenuItem onClick={() => setTheme('light')} className="flex items-center gap-2">
-                      <Sun className="h-4 w-4 text-yellow-400" />
-                      <span>Light</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme('dark')} className="flex items-center gap-2">
-                      <Moon className="h-4 w-4 text-blue-500 dark:text-yellow-300" />
-                      <span>Dark</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme('system')} className="flex items-center gap-2">
-                      <span className="inline-block w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 border border-gray-300 dark:border-gray-700" />
-                      <span>System</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="flex items-center gap-2">
-                  <LogOut className="mr-2 h-4 w-4 text-red-500" />
-                  <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </SidebarFooter>
-        <div className="mt-8" />
+        </div>
+      </SidebarHeader>
         <div className="flex-1 min-h-0 overflow-auto">
           <SidebarContent>
             <SidebarMenu>
@@ -206,8 +140,76 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-                  </div>
-                </div>
+        </div>
+        {/* Profile button fixed at bottom */}
+        <div className="sticky bottom-0 left-0 w-full bg-transparent z-10">
+          <SidebarFooter>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+                <button className={cn(buttonVariants({ variant: 'ghost' }), `w-full justify-start text-left gap-3 p-4 rounded-xl h-auto bg-primary/10 group transition-all duration-200
+                  hover:bg-gradient-to-r hover:from-blue-800/70 hover:to-green-700/70 hover:text-white hover:backdrop-blur-md
+                  dark:hover:bg-gradient-to-r dark:hover:from-blue-900/80 dark:hover:to-green-800/80 dark:hover:text-white
+                  `)}> 
+                  <Avatar className="h-10 w-10 flex items-center justify-center bg-primary text-primary-foreground">
+                  <User className="h-6 w-6" />
+                </Avatar>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-semibold group-hover:text-accent-foreground">{user.username}</span>
+                    <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/90">{user.email}</span>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 mb-2 ml-2" align="end" side="bottom" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.username}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+              </div>
+            </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href="/account">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Profile Settings</span>
+                </Link>
+            </DropdownMenuItem>
+             <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <span className="flex items-center gap-2">
+                      <Sun className="h-4 w-4 mr-1 text-yellow-400 dark:text-gray-400 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                      <Moon className="h-4 w-4 mr-1 text-blue-500 dark:text-yellow-300 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                      <span>Theme</span>
+                    </span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                    <DropdownMenuSubContent className="backdrop-blur-md bg-white/80 dark:bg-gray-900/90 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl rounded-xl p-1">
+                      <DropdownMenuItem onClick={() => setTheme('light')} className="flex items-center gap-2">
+                        <Sun className="h-4 w-4 text-yellow-400" />
+                    <span>Light</span>
+                  </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTheme('dark')} className="flex items-center gap-2">
+                        <Moon className="h-4 w-4 text-blue-500 dark:text-yellow-300" />
+                    <span>Dark</span>
+                  </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTheme('system')} className="flex items-center gap-2">
+                        <span className="inline-block w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 border border-gray-300 dark:border-gray-700" />
+                    <span>System</span>
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="flex items-center gap-2">
+                    <LogOut className="mr-2 h-4 w-4 text-red-500" />
+                    <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
+        </div>
+      </div>
     </aside>
   );
 }
