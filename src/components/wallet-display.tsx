@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { BadgeDollarSign, CreditCard, RefreshCw } from "lucide-react"
+import { BadgeDollarSign, CreditCard, RefreshCw, Send, TrendingUp, Activity } from "lucide-react"
 import { useTransactions, type Transaction as TxType } from '@/context/transactions-context';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -47,47 +47,90 @@ const TransactionTable = ({
   const paginated = transactions.slice((page - 1) * pageSize, page * pageSize);
 
   if (isLoading) {
-    return <p className="text-center text-muted-foreground py-8">Loading transactions...</p>
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading transactions...</p>
+        </div>
+      </div>
+    )
   }
 
   if (error) {
-    return <p className="text-center text-red-500 py-8">Error loading transactions: {error}</p>
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">Error loading transactions: {error}</p>
+      </div>
+    )
   }
 
   if (!transactions.length) {
-    return <p className="text-center text-muted-foreground py-8">No transactions to display for this category.</p>
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600 dark:text-gray-400">No transactions to display for this category.</p>
+      </div>
+    )
   }
+  
   return (
     <>
+      <div className="rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
     <Table>
       <TableHeader>
-        <TableRow>
-          <TableHead>Type</TableHead>
-          <TableHead>Details</TableHead>
-          <TableHead className="hidden md:table-cell">Date</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
+            <TableRow className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
+              <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Type</TableHead>
+              <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Details</TableHead>
+              <TableHead className="hidden md:table-cell font-semibold text-gray-900 dark:text-gray-100">Date</TableHead>
+              <TableHead className="text-right font-semibold text-gray-900 dark:text-gray-100">Amount</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-          {paginated.map((tx) => (
-          <TableRow key={tx.id}>
+            {paginated.map((tx, index) => (
+              <TableRow 
+                key={tx.id}
+                className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/10 dark:hover:to-purple-900/10 transition-all duration-200"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
             <TableCell>
-              <Badge variant={tx.type === "Sent" ? "destructive" : tx.type === "Received" ? "default" : "secondary"} className="capitalize">{tx.type}</Badge>
+                  <Badge 
+                    variant={tx.type === "Sent" ? "destructive" : tx.type === "Received" ? "default" : "secondary"} 
+                    className="capitalize font-medium"
+                  >
+                    {tx.type}
+                  </Badge>
             </TableCell>
-            <TableCell>{tx.service}</TableCell>
-            <TableCell className="hidden md:table-cell">{tx.date}</TableCell>
-            <TableCell className={`text-right font-mono ${tx.amount.startsWith('+') ? 'text-accent' : 'text-destructive'}`}>
+                <TableCell className="text-gray-900 dark:text-gray-100">{tx.service}</TableCell>
+                <TableCell className="hidden md:table-cell text-gray-600 dark:text-gray-400">{tx.date}</TableCell>
+                <TableCell className={`text-right font-mono font-semibold ${tx.amount.startsWith('+') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
               {tx.amount}
             </TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
-      <div className="flex justify-between items-center mt-2">
-        <span className="text-xs text-muted-foreground">Page {page} of {totalPages}</span>
+      </div>
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Page {page} of {totalPages}</span>
         <div className="space-x-2">
-          <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-          <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => setPage((p) => Math.max(1, p - 1))} 
+            disabled={page === 1}
+            className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+          >
+            Previous
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))} 
+            disabled={page === totalPages}
+            className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+          >
+            Next
+          </Button>
         </div>
       </div>
     </>
@@ -116,16 +159,17 @@ const QuickPaymentForm = ({
 }) => (
   <div className="space-y-4">
     <div className="grid gap-2">
-      <Label htmlFor="recipient">Recipient</Label>
+      <Label htmlFor="recipient" className="text-sm font-medium text-gray-700 dark:text-gray-300">Recipient</Label>
       <Input 
         id="recipient" 
         placeholder="Stellar address or user@domain.com"
         value={recipient}
         onChange={(e) => setRecipient(e.target.value)}
+        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
       />
     </div>
     <div className="grid gap-2">
-      <Label htmlFor="amount">Amount (BD)</Label>
+      <Label htmlFor="amount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Amount (BD)</Label>
       <Input 
         id="amount" 
         type="text" 
@@ -138,19 +182,35 @@ const QuickPaymentForm = ({
             setAmount(value);
           }
         }}
+        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
       />
     </div>
     <div className="grid gap-2">
-      <Label htmlFor="memo">Memo (Optional)</Label>
+      <Label htmlFor="memo" className="text-sm font-medium text-gray-700 dark:text-gray-300">Memo (Optional)</Label>
       <Input 
         id="memo" 
         placeholder="For service..."
         value={memo}
         onChange={(e) => setMemo(e.target.value)}
+        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
       />
     </div>
-    <Button onClick={onSendPayment} className="w-full" disabled={isSending}>
-      {isSending ? 'Sending...' : 'Send BlueDollars'}
+    <Button 
+      onClick={onSendPayment} 
+      className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group" 
+      disabled={isSending}
+    >
+      {isSending ? (
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          <span>Sending...</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Send className="w-4 h-4" />
+          <span>Send BlueDollars</span>
+        </div>
+      )}
     </Button>
   </div>
 );
@@ -365,37 +425,9 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
     if (creatorEmail && creatorEmail !== walletEmail) {
       url += `?creatorEmail=${encodeURIComponent(creatorEmail)}`;
     }
-    // setBalanceLoading(true); // This state is now managed by useAccount
-    // setBalanceError(null); // This state is now managed by useAccount
-    // setBalances([]); // This state is now managed by useAccount
     if (!walletEmail) {
-      // setBalanceError('No email found for wallet.'); // This state is now managed by useAccount
-      // setBalanceLoading(false); // This state is now managed by useAccount
       return;
     }
-    // fetch(url, { // This fetch call is now handled by useAccount
-    //   method: 'GET',
-    //   headers: { 'Content-Type': 'application/json' },
-    // })
-    //   .then(async (res) => {
-    //     if (!res.ok) {
-    //       const data = await res.json().catch(() => ({}));
-    //       throw new Error(data.error || data.message || 'Failed to fetch wallet balances');
-    //     }
-    //     return res.json();
-    //   })
-    //   .then((data) => {
-    //     if (data.success && Array.isArray(data.data)) {
-    //       setBalances(data.data);
-    //     } else {
-    //       throw new Error('Invalid response from server');
-    //     }
-    //   })
-    //   .catch((err) => {
-    //     setBalanceError(err.message);
-    //     setBalances([]);
-    //   })
-    //   .finally(() => setBalanceLoading(false));
   }, [walletType, walletEmail, creatorEmail, entityParam]);
 
   // Fetch entity transactions when entity is selected
@@ -476,13 +508,25 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
 
   if (isAccountLoading) {
     return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Wallet Overview</CardTitle>
-          <CardDescription>Loading wallet details...</CardDescription>
+      <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+        <CardHeader className="pb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold">Wallet Overview</CardTitle>
+              <CardDescription className="text-base">Loading wallet details...</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <p>Loading...</p>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     )
@@ -491,38 +535,57 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
   return (
     <>
       <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
-        <DialogContent>
+        <DialogContent className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Export Wallet Keys</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Export Wallet Keys</DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
               These are your wallet keys. Keep them secure and do not share them.
             </DialogDescription>
           </DialogHeader>
-          {exportLoading && <p>Loading...</p>}
+          {exportLoading && (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            </div>
+          )}
           {exportError && <p className="text-red-500">{exportError}</p>}
           {exportResult && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="publicKey">Public Key</Label>
-                <Input id="publicKey" value={exportResult.publicKey} readOnly />
+                <Label htmlFor="publicKey" className="text-sm font-medium text-gray-700 dark:text-gray-300">Public Key</Label>
+                <Input 
+                  id="publicKey" 
+                  value={exportResult.publicKey} 
+                  readOnly 
+                  className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50"
+                />
               </div>
               <div>
-                <Label htmlFor="secretKey">Secret Key</Label>
-                <Input id="secretKey" value={exportResult.secretKey} readOnly />
+                <Label htmlFor="secretKey" className="text-sm font-medium text-gray-700 dark:text-gray-300">Secret Key</Label>
+                <Input 
+                  id="secretKey" 
+                  value={exportResult.secretKey} 
+                  readOnly 
+                  className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50"
+                />
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
       
-      <Card className="mb-6">
-        <CardHeader>
+      <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 mb-6">
+        <CardHeader className="pb-6">
           <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg">
+                <BadgeDollarSign className="w-5 h-5 text-white" />
+              </div>
             <div>
-              <CardTitle>Wallet Overview</CardTitle>
-              <CardDescription>
+                <CardTitle className="text-2xl font-bold">Wallet Overview</CardTitle>
+                <CardDescription className="text-base">
                 Your current balance and a quick way to send BlueDollars.
               </CardDescription>
+              </div>
             </div>
             <Button
               variant="outline"
@@ -537,6 +600,7 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
                 });
               }}
               disabled={isAccountLoading}
+              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isAccountLoading ? 'animate-spin' : ''}`} />
               Refresh
@@ -544,16 +608,16 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center gap-4 p-6 rounded-lg bg-primary/10">
-            <div className="p-3 rounded-full bg-primary text-primary-foreground">
-              <BadgeDollarSign className="w-8 h-8" />
+          <div className="flex items-center gap-6 p-8 rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-100 dark:border-blue-800">
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg">
+              <BadgeDollarSign className="w-10 h-10" />
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">BlueDollars Balance</div>
+            <div className="flex-1">
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">BlueDollars Balance</div>
               {isAccountLoading ? (
-                <div className="text-3xl font-bold">Loading...</div>
+                <div className="text-4xl font-bold text-gray-400">Loading...</div>
               ) : accountError ? (
-                <div className="text-3xl font-bold text-red-500">{accountError.message}</div>
+                <div className="text-4xl font-bold text-red-500">{accountError.message}</div>
               ) : balances.length > 0 ? (
                 (() => {
                   const bdAsset = balances.find((a: any) => a.asset_code === 'BD');
@@ -561,19 +625,22 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
                   let code = asset.asset_code || asset.asset_type || 'Asset';
                   if (code === 'native') code = 'XLM';
                   return (
-                    <div className="text-3xl font-bold">
+                    <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                       {parseFloat(asset.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {code}
                     </div>
                   );
                 })()
               ) : (
-                <div className="text-3xl font-bold">-</div>
+                <div className="text-4xl font-bold text-gray-400">-</div>
               )}
             </div>
           </div>
           
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="font-medium">Quick Payment</h3>
+          <div className="space-y-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <Send className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold">Quick Payment</h3>
+            </div>
             <QuickPaymentForm
               recipient={recipient}
               setRecipient={setRecipient}
@@ -588,13 +655,24 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
         {isAccountLoading ? (
-          <Card><CardContent>Loading balances...</CardContent></Card>
+          <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+            <CardContent className="flex items-center justify-center py-8">
+              <div className="text-center space-y-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-gray-600 dark:text-gray-400">Loading balances...</p>
+              </div>
+            </CardContent>
+          </Card>
         ) : accountError ? (
-          <Card><CardContent className="text-red-500">{accountError.message}</CardContent></Card>
+          <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+            <CardContent className="text-red-500 py-8 text-center">{accountError.message}</CardContent>
+          </Card>
         ) : balances.length === 0 ? (
-          <Card><CardContent>No balances found.</CardContent></Card>
+          <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+            <CardContent className="py-8 text-center text-gray-600 dark:text-gray-400">No balances found.</CardContent>
+          </Card>
         ) : (
           balances.map((asset, idx) => {
             let code = asset.asset_code || asset.asset_type || idx;
@@ -605,14 +683,21 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
               assetName = 'XLM';
             }
             return (
-              <Card key={code}>
+              <Card key={code} className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">{assetName}</CardTitle>
-                  {code === 'BD' ? <BadgeDollarSign className="w-6 h-6 text-primary" /> : <CreditCard className="w-6 h-6 text-muted-foreground" />}
+                  <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">{assetName}</CardTitle>
+                  {code === 'BD' ? 
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                      <BadgeDollarSign className="w-4 h-4 text-white" />
+                    </div> : 
+                    <div className="p-2 bg-gradient-to-r from-gray-500 to-gray-600 rounded-lg">
+                      <CreditCard className="w-4 h-4 text-white" />
+                    </div>
+                  }
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{asset.balance}</div>
-                  <p className="text-xs text-muted-foreground">{code}</p>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{asset.balance}</div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{code}</p>
             </CardContent>
           </Card>
             );
@@ -620,20 +705,27 @@ export function WalletDisplay({ entityName }: WalletDisplayProps) {
         )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>
+      <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+        <CardHeader className="pb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold">Transaction History</CardTitle>
+              <CardDescription className="text-base">
             A record of all transactions on your account.
           </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all">
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="sent">Sent</TabsTrigger>
-              <TabsTrigger value="received">Received</TabsTrigger>
-              <TabsTrigger value="trades">Trades</TabsTrigger>
+          <Tabs defaultValue="all" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
+              <TabsTrigger value="all" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300">All</TabsTrigger>
+              <TabsTrigger value="sent" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300">Sent</TabsTrigger>
+              <TabsTrigger value="received" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300">Received</TabsTrigger>
+              <TabsTrigger value="trades" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-300">Trades</TabsTrigger>
             </TabsList>
             <TabsContent value="all">
               <TransactionTable transactions={filteredTransactions} isLoading={transactionLoading} error={transactionError} />

@@ -45,7 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useKeycloak } from '@react-keycloak/web';
 import { WalletDisplay } from '@/components/wallet-display';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Building2, Users, Settings, Plus, Trash2 } from 'lucide-react';
 
 const addUserSchema = z.object({
   entity: z.string({ required_error: "Please select an entity." }),
@@ -69,7 +69,13 @@ function EntityManagementComponent() {
     const router = useRouter();
     const entityId = searchParams.get('entityId');
     const [selectedEntityName, setSelectedEntityName] = useState<string | null>(null);
+    const [isVisible, setIsVisible] = useState(false);
 
+    useEffect(() => {
+        // Trigger entrance animation
+        const timer = setTimeout(() => setIsVisible(true), 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     const form = useForm<z.infer<typeof addUserSchema>>({
         resolver: zodResolver(addUserSchema),
@@ -308,16 +314,43 @@ function EntityManagementComponent() {
     };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1 flex justify-between items-center">
+    <div className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-all duration-1000 ease-out ${
+      isVisible 
+        ? 'opacity-100' 
+        : 'opacity-0'
+    }`}>
+      {/* Floating Elements */}
+      <div className="fixed -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-20 animate-bounce pointer-events-none"></div>
+      <div className="fixed -bottom-4 -left-4 w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-20 animate-bounce delay-1000 pointer-events-none"></div>
+      <div className="fixed top-1/4 left-1/4 w-4 h-4 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full opacity-15 animate-pulse pointer-events-none"></div>
+      
+      <div className={`transition-all duration-700 ease-out ${
+        isVisible 
+          ? 'opacity-100 translate-y-0' 
+          : 'opacity-0 translate-y-8'
+      }`}>
+        <div className="container mx-auto p-6 space-y-8">
+          {/* Header Section */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
+                <Building2 className="w-8 h-8 text-white" />
+              </div>
         <div>
-            <h1 className="text-3xl font-bold">Entity Management</h1>
-            <p className="text-muted-foreground">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent">
+                  Entity Management
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage users and services for your entities.
             </p>
+              </div>
         </div>
         {selectedEntityName && (
-            <Button variant="outline" onClick={handleChangeEntity}>
+              <Button 
+                variant="outline" 
+                onClick={handleChangeEntity}
+                className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+              >
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Change Entity
             </Button>
@@ -330,10 +363,19 @@ function EntityManagementComponent() {
                 <WalletDisplay entityName={selectedEntityName} />
             </div>
         ) : (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Select an Entity</CardTitle>
-                    <CardDescription>Choose an entity to view its wallet, users, and services.</CardDescription>
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <CardHeader className="pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                      <Building2 className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Select an Entity</CardTitle>
+                      <CardDescription className="text-base text-gray-600 dark:text-gray-400">
+                        Choose an entity to view its wallet, users, and services.
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                     <FormField
@@ -341,16 +383,18 @@ function EntityManagementComponent() {
                         name="entity"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Entity</FormLabel>
+                        <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Entity</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ""}>
                                 <FormControl>
-                                <SelectTrigger>
+                            <SelectTrigger className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
                                     <SelectValue placeholder="Select an entity" />
                                 </SelectTrigger>
                                 </FormControl>
-                                <SelectContent>
+                          <SelectContent className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
                                 {entities.map((entity) => (
-                                    <SelectItem key={entity.id} value={entity.id}>{entity.name}</SelectItem>
+                              <SelectItem key={entity.id} value={entity.id} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                {entity.name}
+                              </SelectItem>
                                 ))}
                                 </SelectContent>
                             </Select>
@@ -363,10 +407,19 @@ function EntityManagementComponent() {
         )}
 
         <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Manage Users</CardTitle>
-                    <CardDescription>Map users to an entity or unmap them.</CardDescription>
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <CardHeader className="pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                      <Users className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Manage Users</CardTitle>
+                      <CardDescription className="text-base text-gray-600 dark:text-gray-400">
+                        Map users to an entity or unmap them.
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={form.handleSubmit(onAddUser)} className="space-y-4">
@@ -375,16 +428,18 @@ function EntityManagementComponent() {
                             name="entity"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Entity</FormLabel>
+                          <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Entity</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                     <FormControl>
-                                    <SelectTrigger>
+                              <SelectTrigger className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
                                         <SelectValue placeholder="Select an entity" />
                                     </SelectTrigger>
                                     </FormControl>
-                                    <SelectContent>
+                            <SelectContent className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
                                     {entities.map((entity) => (
-                                        <SelectItem key={entity.id} value={entity.id}>{entity.name}</SelectItem>
+                                <SelectItem key={entity.id} value={entity.id} className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">
+                                  {entity.name}
+                                </SelectItem>
                                     ))}
                                     </SelectContent>
                                 </Select>
@@ -397,82 +452,129 @@ function EntityManagementComponent() {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>User Email</FormLabel>
+                          <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">User Email</FormLabel>
                                 <FormControl>
-                                    <Input type="email" placeholder="user@example.com" {...field} />
+                            <Input 
+                              type="email" 
+                              placeholder="user@example.com" 
+                              {...field}
+                              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                            />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
                             )}
                         />
-                        <Button type="submit">Add User</Button>
+                    <Button 
+                      type="submit"
+                      className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      <span>Add User</span>
+                    </Button>
                     </form>
                 </CardContent>
                 <CardFooter className="flex flex-col items-start">
-                    <h3 className="font-medium mb-4">Mapped Users</h3>
+                  <h3 className="font-medium mb-4 text-gray-900 dark:text-gray-100">Mapped Users</h3>
+                  <div className="w-full rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Entity</TableHead>
-                                <TableHead className="text-right">Action</TableHead>
+                        <TableRow className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Email</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Entity</TableHead>
+                          <TableHead className="text-right font-semibold text-gray-900 dark:text-gray-100">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {mappedUsers.length > 0 ? (
-                                mappedUsers.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>{user.entity}</TableCell>
+                          mappedUsers.map((user, index) => (
+                            <TableRow 
+                              key={user.id}
+                              className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/10 dark:hover:to-purple-900/10 transition-all duration-200"
+                              style={{ animationDelay: `${index * 50}ms` }}
+                            >
+                              <TableCell className="text-gray-900 dark:text-gray-100">{user.email}</TableCell>
+                              <TableCell className="text-gray-900 dark:text-gray-100">{user.entity}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="destructive" size="sm" onClick={() => unmapUser(user.id)}>Unmap</Button>
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm" 
+                                  onClick={() => unmapUser(user.id)}
+                                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                                >
+                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  Unmap
+                                </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                            <TableCell colSpan={3} className="text-center py-8 text-gray-600 dark:text-gray-400">
                                         Select an entity to see its members.
                                     </TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
                     </Table>
+                  </div>
                 </CardFooter>
             </Card>
             
-            <Card>
-                <CardHeader>
-                    <CardTitle>Associated Services</CardTitle>
-                    <CardDescription>Services offered by your entities.</CardDescription>
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <CardHeader className="pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                      <Settings className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Associated Services</CardTitle>
+                      <CardDescription className="text-base text-gray-600 dark:text-gray-400">
+                        Services offered by your entities.
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
+                  <div className="rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead>Service</TableHead>
-                                <TableHead>Status</TableHead>
+                        <TableRow className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Service</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {services.filter(s => s.status === 'Active').map((service) => (
-                                <TableRow key={service.name} onClick={() => handleServiceClick(service.name)} className="cursor-pointer">
-                                    <TableCell>{service.name}</TableCell>
+                        {services.filter(s => s.status === 'Active').map((service, index) => (
+                          <TableRow 
+                            key={service.name} 
+                            onClick={() => handleServiceClick(service.name)} 
+                            className="cursor-pointer hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/10 dark:hover:to-purple-900/10 transition-all duration-200"
+                            style={{ animationDelay: `${index * 50}ms` }}
+                          >
+                            <TableCell className="text-gray-900 dark:text-gray-100">{service.name}</TableCell>
                                     <TableCell>
-                                        <Badge variant={service.status === 'Active' ? 'success' : 'secondary'}>{service.status}</Badge>
+                              <Badge 
+                                variant={service.status === 'Active' ? 'success' : 'secondary'}
+                                className="bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
+                              >
+                                {service.status}
+                              </Badge>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
+                  </div>
                 </CardContent>
             </Card>
         </div>
       </Form>
+        </div>
+      </div>
     </div>
   );
 }
-
 
 export default function EntityPage() {
     return (
