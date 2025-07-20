@@ -8,7 +8,7 @@ import { PageLoader } from '@/components/page-loader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-import { Users, Package, Landmark, TrendingUp, Shield, AlertCircle, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { Users, Package, Landmark, TrendingUp, Shield, AlertCircle, ChevronDown, ChevronRight, X, Coins } from 'lucide-react';
 
 interface IssuedAsset {
   _links: {
@@ -53,6 +53,13 @@ export default function AssetsPage() {
   const [userPublicKey, setUserPublicKey] = useState<string | null>(null);
   const [floatingAsset, setFloatingAsset] = useState<string | null>(null);
   const [floatingPosition, setFloatingPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger entrance animation
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // First fetch user's public key, then fetch issued assets
   useEffect(() => {
@@ -162,271 +169,314 @@ export default function AssetsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold">Asset Management</h1>
-        <p className="text-muted-foreground">
-          View and manage the assets issued by your account.
-        </p>
-      </div>
-
-      {error && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <span>{error}</span>
+    <div className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-all duration-1000 ease-out ${
+      isVisible 
+        ? 'opacity-100' 
+        : 'opacity-0'
+    }`}>
+      {/* Floating Elements */}
+      <div className="fixed -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-20 animate-bounce pointer-events-none"></div>
+      <div className="fixed -bottom-4 -left-4 w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-20 animate-bounce delay-1000 pointer-events-none"></div>
+      <div className="fixed top-1/4 left-1/4 w-4 h-4 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full opacity-15 animate-pulse pointer-events-none"></div>
+      
+      <div className={`transition-all duration-700 ease-out ${
+        isVisible 
+          ? 'opacity-100 translate-y-0' 
+          : 'opacity-0 translate-y-8'
+      }`}>
+        <div className="container mx-auto p-6 space-y-8">
+          {/* Header Section */}
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
+              <Coins className="w-8 h-8 text-white" />
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent">
+                Asset Management
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                View and manage the assets issued by your account.
+              </p>
+            </div>
+          </div>
 
-      {issuedAssets.length === 0 && !error ? (
-        <Card className="text-center p-12">
-          <CardTitle>No Assets Found</CardTitle>
-          <CardDescription className="mt-2">There are no assets issued on the platform yet.</CardDescription>
-        </Card>
-      ) : (
-        <div className="assets-container relative">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {issuedAssets.map((asset) => (
-              <Card 
-                key={asset.paging_token} 
-                className={`hover:shadow-lg transition-all duration-300 cursor-pointer ${
-                  floatingAsset === asset.paging_token ? 'opacity-50' : 'hover:scale-[1.02]'
-                }`}
-                onClick={(e) => handleCardClick(asset.paging_token, e)}
-                style={{
-                  flex: '0 0 auto',
-                  width: floatingAsset === asset.paging_token ? '100%' : 'auto'
-                }}
-              >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-bold">{asset.asset_code}</CardTitle>
-                  <Landmark className="h-6 w-6 text-primary" />
-                </div>
-                <CardDescription className="flex items-center gap-2">
-                  <span>Asset Type: {asset.asset_type}</span>
-                  <Badge variant={asset.flags.auth_required ? "destructive" : "secondary"}>
-                    {asset.flags.auth_required ? "Auth Required" : "No Auth"}
-                  </Badge>
-                </CardDescription>
-                
-                {/* Quick Summary - Always Visible */}
-                <div className="mt-3 pt-3 border-t">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Issued:</span>
-                      <span className="font-semibold">{formatBalance(asset.balances.authorized)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Accounts:</span>
-                      <span className="font-medium">{getTotalAccounts(asset.accounts)}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors text-sm font-medium">
-                  <span>{floatingAsset === asset.paging_token ? 'Click to collapse' : 'Click to expand'}</span>
-                  {floatingAsset === asset.paging_token ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
+          {error && (
+            <Card className="backdrop-blur-sm bg-red-50/80 dark:bg-red-900/20 border-red-200 dark:border-red-800 border-0 shadow-2xl">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>{error}</span>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-        
-        {/* Floating Card Modal - Positioned absolutely */}
-        {floatingAsset && floatingPosition && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm"
-            onClick={() => {
-              setFloatingAsset(null);
-              setFloatingPosition(null);
-            }}
-          >
-            <div
-              className="bg-background border rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                animation: 'slideIn 0.3s ease-out'
-              }}
-            >
-              {(() => {
-                const asset = issuedAssets.find(a => a.paging_token === floatingAsset);
-                if (!asset) return null;
-                
-                return (
-                  <>
-                    <div className="p-6 border-b">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <Landmark className="h-6 w-6 text-primary" />
-                          </div>
-                          <div>
-                            <h2 className="text-2xl font-bold">{asset.asset_code}</h2>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-sm text-muted-foreground">Asset Type: {asset.asset_type}</span>
-                              <Badge variant={asset.flags.auth_required ? "destructive" : "secondary"}>
-                                {asset.flags.auth_required ? "Auth Required" : "No Auth"}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setFloatingAsset(null);
-                            setFloatingPosition(null);
-                          }}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
+          )}
+
+          {issuedAssets.length === 0 && !error ? (
+            <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 text-center p-12">
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 inline-block mb-4">
+                <Coins className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">No Assets Found</CardTitle>
+              <CardDescription className="mt-2 text-gray-600 dark:text-gray-400">There are no assets issued on the platform yet.</CardDescription>
+            </Card>
+          ) : (
+            <div className="assets-container relative">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {issuedAssets.map((asset, index) => (
+                  <Card 
+                    key={asset.paging_token} 
+                    className={`backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 cursor-pointer ${
+                      floatingAsset === asset.paging_token ? 'opacity-50' : 'hover:scale-[1.02]'
+                    }`}
+                    onClick={(e) => handleCardClick(asset.paging_token, e)}
+                    style={{
+                      flex: '0 0 auto',
+                      width: floatingAsset === asset.paging_token ? '100%' : 'auto',
+                      animationDelay: `${index * 50}ms`
+                    }}
+                  >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">{asset.asset_code}</CardTitle>
+                      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                        <Landmark className="h-5 w-5 text-white" />
                       </div>
                     </div>
+                    <CardDescription className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <span>Asset Type: {asset.asset_type}</span>
+                      <Badge 
+                        variant={asset.flags.auth_required ? "destructive" : "secondary"}
+                        className="font-medium"
+                      >
+                        {asset.flags.auth_required ? "Auth Required" : "No Auth"}
+                      </Badge>
+                    </CardDescription>
                     
-                    <div className="p-6 space-y-6">
-                      {/* Quick Summary */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-primary">{formatBalance(asset.balances.authorized)}</div>
-                          <div className="text-sm text-muted-foreground">Total Issued</div>
+                    {/* Quick Summary - Always Visible */}
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Total Issued:</span>
+                          <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBalance(asset.balances.authorized)}</span>
                         </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">{getTotalAccounts(asset.accounts)}</div>
-                          <div className="text-sm text-muted-foreground">Total Accounts</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">{formatBalance(asset.claimable_balances_amount)}</div>
-                          <div className="text-sm text-muted-foreground">Claimable</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold">{formatBalance(asset.liquidity_pools_amount)}</div>
-                          <div className="text-sm text-muted-foreground">Liquidity</div>
-                        </div>
-                      </div>
-
-                      {/* Trustline Details */}
-                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                          <Users className="h-5 w-5 text-primary" /> Trustline Details
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="p-4 border rounded-lg">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-muted-foreground">Authorized</span>
-                              <span className="text-lg font-semibold">{asset.accounts.authorized}</span>
-                            </div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-muted-foreground">Authorized to Maintain</span>
-                              <span className="text-lg font-semibold">{asset.accounts.authorized_to_maintain_liabilities}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-muted-foreground">Unauthorized</span>
-                              <span className="text-lg font-semibold">{asset.accounts.unauthorized}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Balance Details */}
-                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                          <Package className="h-5 w-5 text-primary" /> Balance Details
-                        </h3>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center p-3 bg-muted/20 rounded-lg">
-                            <span className="text-muted-foreground">Authorized</span>
-                            <span className="font-semibold">{formatBalance(asset.balances.authorized)}</span>
-                          </div>
-                          <div className="flex justify-between items-center p-3 bg-muted/20 rounded-lg">
-                            <span className="text-muted-foreground">Authorized to Maintain</span>
-                            <span className="font-semibold">{formatBalance(asset.balances.authorized_to_maintain_liabilities)}</span>
-                          </div>
-                          <div className="flex justify-between items-center p-3 bg-muted/20 rounded-lg">
-                            <span className="text-muted-foreground">Unauthorized</span>
-                            <span className="font-semibold">{formatBalance(asset.balances.unauthorized)}</span>
-                          </div>
-                          <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg border-l-4 border-primary">
-                            <span className="font-medium">Total Balance</span>
-                            <span className="text-lg font-bold">{formatBalance(getTotalBalance(asset.balances).toString())}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Additional Info */}
-                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5 text-primary" /> Additional Information
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="p-4 border rounded-lg">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-muted-foreground">Claimable Balances</span>
-                              <span className="font-semibold">{formatBalance(asset.claimable_balances_amount)}</span>
-                            </div>
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium text-muted-foreground">Liquidity Pools</span>
-                              <span className="font-semibold">{formatBalance(asset.liquidity_pools_amount)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-muted-foreground">Contracts</span>
-                              <span className="font-semibold">{formatBalance(asset.contracts_amount)}</span>
-                            </div>
-                          </div>
-                          <div className="p-4 border rounded-lg">
-                            <div className="mb-3">
-                              <span className="text-sm font-medium text-muted-foreground">Asset Issuer</span>
-                              <div className="mt-1 text-sm font-mono bg-muted p-2 rounded break-all">
-                                {asset.asset_issuer}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium text-muted-foreground">Paging Token</span>
-                              <div className="mt-1 text-sm font-mono bg-muted p-2 rounded break-all">
-                                {asset.paging_token}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Asset Flags */}
-                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg flex items-center gap-2">
-                          <Shield className="h-5 w-5 text-primary" /> Asset Flags
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {asset.flags.auth_revocable && (
-                            <Badge variant="outline" className="px-3 py-1">Revocable</Badge>
-                          )}
-                          {asset.flags.auth_immutable && (
-                            <Badge variant="outline" className="px-3 py-1">Immutable</Badge>
-                          )}
-                          {asset.flags.auth_clawback_enabled && (
-                            <Badge variant="outline" className="px-3 py-1">Clawback Enabled</Badge>
-                          )}
-                          {!asset.flags.auth_revocable && !asset.flags.auth_immutable && !asset.flags.auth_clawback_enabled && (
-                            <Badge variant="outline" className="px-3 py-1">Standard</Badge>
-                          )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Accounts:</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{getTotalAccounts(asset.accounts)}</span>
                         </div>
                       </div>
                     </div>
-                  </>
-                );
-              })()}
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    <div className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <span>{floatingAsset === asset.paging_token ? 'Click to collapse' : 'Click to expand'}</span>
+                      {floatingAsset === asset.paging_token ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+            
+            {/* Floating Card Modal - Positioned absolutely */}
+            {floatingAsset && floatingPosition && (
+              <div
+                className="fixed inset-0 z-50 flex items-start justify-center pt-8 bg-black/20 backdrop-blur-sm"
+                onClick={() => {
+                  setFloatingAsset(null);
+                  setFloatingPosition(null);
+                }}
+              >
+                <div
+                  className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-2xl max-w-4xl w-full mx-4"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    animation: 'slideIn 0.3s ease-out'
+                  }}
+                >
+                  {(() => {
+                    const asset = issuedAssets.find(a => a.paging_token === floatingAsset);
+                    if (!asset) return null;
+                    
+                    return (
+                      <>
+                        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                                <Landmark className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{asset.asset_code}</h2>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">Asset Type: {asset.asset_type}</span>
+                                  <Badge 
+                                    variant={asset.flags.auth_required ? "destructive" : "secondary"}
+                                    className="font-medium"
+                                  >
+                                    {asset.flags.auth_required ? "Auth Required" : "No Auth"}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setFloatingAsset(null);
+                                setFloatingPosition(null);
+                              }}
+                              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                            >
+                              <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="p-6">
+                          {/* Compact Layout - All details in a single view */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Left Column */}
+                            <div className="space-y-4">
+                              {/* Quick Summary */}
+                              <div className="grid grid-cols-2 gap-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                                <div className="text-center">
+                                  <div className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{formatBalance(asset.balances.authorized)}</div>
+                                  <div className="text-xs text-gray-600 dark:text-gray-400">Total Issued</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{getTotalAccounts(asset.accounts)}</div>
+                                  <div className="text-xs text-gray-600 dark:text-gray-400">Total Accounts</div>
+                                </div>
+                              </div>
+
+                              {/* Trustline Details */}
+                              <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                                <h4 className="font-semibold text-sm flex items-center gap-2 text-gray-900 dark:text-gray-100 mb-3">
+                                  <Users className="h-3 w-3" />
+                                  Trustline Details
+                                </h4>
+                                <div className="space-y-2 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Authorized:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{asset.accounts.authorized}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Auth to Maintain:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{asset.accounts.authorized_to_maintain_liabilities}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Unauthorized:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{asset.accounts.unauthorized}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Balance Details */}
+                              <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                                <h4 className="font-semibold text-sm flex items-center gap-2 text-gray-900 dark:text-gray-100 mb-3">
+                                  <Package className="h-3 w-3" />
+                                  Balance Details
+                                </h4>
+                                <div className="space-y-2 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Authorized:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBalance(asset.balances.authorized)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Auth to Maintain:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBalance(asset.balances.authorized_to_maintain_liabilities)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Unauthorized:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBalance(asset.balances.unauthorized)}</span>
+                                  </div>
+                                  <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                                    <span className="font-medium text-gray-900 dark:text-gray-100">Total:</span>
+                                    <span className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{formatBalance(getTotalBalance(asset.balances).toString())}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right Column */}
+                            <div className="space-y-4">
+                              {/* Additional Info */}
+                              <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                                <h4 className="font-semibold text-sm flex items-center gap-2 text-gray-900 dark:text-gray-100 mb-3">
+                                  <TrendingUp className="h-3 w-3" />
+                                  Additional Information
+                                </h4>
+                                <div className="space-y-2 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Claimable:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBalance(asset.claimable_balances_amount)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Liquidity:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBalance(asset.liquidity_pools_amount)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600 dark:text-gray-400">Contracts:</span>
+                                    <span className="font-semibold text-gray-900 dark:text-gray-100">{formatBalance(asset.contracts_amount)}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Asset Flags */}
+                              <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                                <h4 className="font-semibold text-sm flex items-center gap-2 text-gray-900 dark:text-gray-100 mb-3">
+                                  <Shield className="h-3 w-3" />
+                                  Asset Flags
+                                </h4>
+                                <div className="flex flex-wrap gap-1">
+                                  {asset.flags.auth_revocable && (
+                                    <Badge variant="outline" className="px-2 py-0.5 text-xs bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700">Revocable</Badge>
+                                  )}
+                                  {asset.flags.auth_immutable && (
+                                    <Badge variant="outline" className="px-2 py-0.5 text-xs bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700">Immutable</Badge>
+                                  )}
+                                  {asset.flags.auth_clawback_enabled && (
+                                    <Badge variant="outline" className="px-2 py-0.5 text-xs bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700">Clawback</Badge>
+                                  )}
+                                  {!asset.flags.auth_revocable && !asset.flags.auth_immutable && !asset.flags.auth_clawback_enabled && (
+                                    <Badge variant="outline" className="px-2 py-0.5 text-xs bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200 dark:border-gray-700">Standard</Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Asset Details */}
+                              <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                                <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-3">Asset Details</h4>
+                                <div className="space-y-2 text-xs">
+                                  <div>
+                                    <span className="text-gray-600 dark:text-gray-400">Issuer:</span>
+                                    <div className="mt-1 font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-gray-900 dark:text-gray-100 break-all">
+                                      {asset.asset_issuer}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-600 dark:text-gray-400">Token:</span>
+                                    <div className="mt-1 font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded text-gray-900 dark:text-gray-100 break-all">
+                                      {asset.paging_token}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
-    )}
+    </div>
     
     <style jsx>{`
       @keyframes slideIn {

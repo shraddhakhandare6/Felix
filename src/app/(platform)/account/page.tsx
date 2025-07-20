@@ -30,7 +30,7 @@ import {
 import { useUser } from '@/context/user-context';
 import { useToast } from '@/hooks/use-toast';
 import { useAccount, type Account } from '@/context/account-context';
-import { Copy, CheckCircle } from 'lucide-react';
+import { Copy, CheckCircle, User, Download, Upload, Eye, EyeOff, QrCode, Shield } from 'lucide-react';
 
 const profileFormSchema = z.object({
   username: z.string().min(2, {
@@ -49,10 +49,17 @@ export default function AccountPage() {
   const [exportAccount, setExportAccount] = useState<{ publicKey: string; secretKey: string } | null>(null);
   const [isExportLoading, setIsExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   const { user, updateUser } = useUser();
   const { importAccount, isLoading } = useAccount();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Trigger entrance animation
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const form = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -172,24 +179,77 @@ export default function AccountPage() {
     }
   }, [activeTab, user.email]);
 
-
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Account Management</h1>
+    <div className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-all duration-1000 ease-out ${
+      isVisible 
+        ? 'opacity-100' 
+        : 'opacity-0'
+    }`}>
+      {/* Floating Elements */}
+      <div className="fixed -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-20 animate-bounce pointer-events-none"></div>
+      <div className="fixed -bottom-4 -left-4 w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-20 animate-bounce delay-1000 pointer-events-none"></div>
+      <div className="fixed top-1/4 left-1/4 w-4 h-4 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full opacity-15 animate-pulse pointer-events-none"></div>
+      
+      <div className={`transition-all duration-700 ease-out ${
+        isVisible 
+          ? 'opacity-100 translate-y-0' 
+          : 'opacity-0 translate-y-8'
+      }`}>
+        <div className="container mx-auto p-6 space-y-8">
+          {/* Header Section */}
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
+              <User className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent">
+                Account Management
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Manage your profile, export and import your Stellar account.
+              </p>
+            </div>
+          </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="export">Export Account</TabsTrigger>
-            <TabsTrigger value="import">Import Account</TabsTrigger>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
+              <TabsTrigger 
+                value="profile"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-200"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger 
+                value="export"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-200"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export Account
+              </TabsTrigger>
+              <TabsTrigger 
+                value="import"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-200"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import Account
+              </TabsTrigger>
         </TabsList>
-        <TabsContent value="profile">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Settings</CardTitle>
-                <CardDescription>
+            
+            <TabsContent value="profile" className="mt-6">
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <CardHeader className="pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                      <User className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Profile Settings</CardTitle>
+                      <CardDescription className="text-base text-gray-600 dark:text-gray-400">
                   Update your username and email address. This is separate from your Stellar wallet.
                 </CardDescription>
+                    </div>
+                  </div>
               </CardHeader>
               <CardContent>
                 <Form {...form}>
@@ -199,9 +259,13 @@ export default function AccountPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Username</FormLabel>
                           <FormControl>
-                            <Input placeholder="Your username" {...field} />
+                              <Input 
+                                placeholder="Your username" 
+                                {...field}
+                                className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -212,45 +276,74 @@ export default function AccountPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                            <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="Your email address" {...field} />
+                              <Input 
+                                type="email" 
+                                placeholder="Your email address" 
+                                {...field}
+                                className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit">Save Changes</Button>
+                      <Button 
+                        type="submit"
+                        className="h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group"
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        <span>Save Changes</span>
+                      </Button>
                   </form>
                 </Form>
               </CardContent>
             </Card>
         </TabsContent>
-        <TabsContent value="export">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Export Your Account</CardTitle>
-                    <CardDescription>
+            
+            <TabsContent value="export" className="mt-6">
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+                <CardHeader className="pb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                      <Download className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Export Your Account</CardTitle>
+                      <CardDescription className="text-base text-gray-600 dark:text-gray-400">
                         Save your account details securely. Keep your Secret Key private and never share it.
                     </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-4">
                         {isExportLoading ? (
-                          <div>Loading...</div>
+                      <div className="flex items-center justify-center p-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+                      </div>
                         ) : exportError ? (
-                          <div className="text-red-500">{exportError}</div>
+                      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
+                        {exportError}
+                      </div>
                         ) : exportAccount ? (
                           <>
                             <div>
-                                <Label htmlFor="publicKey">Public Key</Label>
+                          <Label htmlFor="publicKey" className="text-sm font-medium text-gray-700 dark:text-gray-300">Public Key</Label>
                                 <div className="relative">
-                                    <Input id="publicKey" readOnly value={exportAccount.publicKey} className="pr-10" />
+                            <Input 
+                              id="publicKey" 
+                              readOnly 
+                              value={exportAccount.publicKey} 
+                              className="pr-10 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70" 
+                            />
                                     <Button 
                                         type="button" 
                                         size="icon" 
                                         variant="ghost" 
-                                        className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700"
                                         onClick={() => handleCopy(exportAccount.publicKey, "Public Key")}
                                         disabled={isExportLoading}
                                     >
@@ -258,12 +351,19 @@ export default function AccountPage() {
                                         <span className="sr-only">Copy Public Key</span>
                                     </Button>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-1">Share this to receive funds.</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Share this to receive funds.</p>
                             </div>
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="secretKeyInput">Secret Key</Label>
-                                    <Button variant="outline" size="sm" onClick={() => setShowSecretKey(!showSecretKey)} disabled={isExportLoading}>
+                            <Label htmlFor="secretKeyInput" className="text-sm font-medium text-gray-700 dark:text-gray-300">Secret Key</Label>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setShowSecretKey(!showSecretKey)} 
+                              disabled={isExportLoading}
+                              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                            >
+                              {showSecretKey ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
                                         {showSecretKey ? "Hide" : "Show"}
                                     </Button>
                                 </div>
@@ -273,13 +373,13 @@ export default function AccountPage() {
                                         readOnly 
                                         value={showSecretKey ? exportAccount.secretKey : "S" + "•".repeat(55)} 
                                         type={showSecretKey ? "text" : "password"} 
-                                        className="pr-10"
+                              className="pr-10 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70"
                                     />
                                     <Button 
                                         type="button" 
                                         size="icon" 
                                         variant="ghost" 
-                                        className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700"
                                         onClick={() => handleCopy(exportAccount.secretKey, "Secret Key")}
                                         disabled={isExportLoading}
                                     >
@@ -287,80 +387,114 @@ export default function AccountPage() {
                                         <span className="sr-only">Copy Secret Key</span>
                                     </Button>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-1"><strong>Warning:</strong> Never share your secret key.</p>
+                          <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            <Shield className="w-3 h-3 inline mr-1" />
+                            <strong>Warning:</strong> Never share your secret key.
+                          </p>
                             </div>
                           </>
                         ) : (
-                          <div>No account data available.</div>
+                      <div className="text-center p-8 text-gray-600 dark:text-gray-400">No account data available.</div>
                         )}
                     </div>
-                    <div className="flex flex-col items-center justify-center space-y-2 bg-secondary p-4 rounded-lg">
+                  <div className="flex flex-col items-center justify-center space-y-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
                        {isExportLoading || !exportAccount ? (
-                         <div className="w-[200px] h-[200px] bg-muted animate-pulse rounded-md" />
+                      <div className="w-[200px] h-[200px] bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg" />
                        ) : (
                          <Image 
                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${exportAccount.publicKey}`}
                            alt="Stellar Account QR Code" 
                            width={200} height={200}
                            data-ai-hint="qr code"
-                           className="rounded-md w-full max-w-[200px] h-auto"
+                        className="rounded-lg w-full max-w-[200px] h-auto"
                          />
                        )}
-                       <p className="text-sm text-muted-foreground">Scan to get public key</p>
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <QrCode className="w-4 h-4" />
+                      <p className="text-sm">Scan to get public key</p>
+                    </div>
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button variant="secondary" onClick={handleDownloadBackup} disabled={isExportLoading || !exportAccount}>Download Backup</Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleDownloadBackup} 
+                    disabled={isExportLoading || !exportAccount}
+                    className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Backup
+                  </Button>
                 </CardFooter>
             </Card>
         </TabsContent>
-        <TabsContent value="import">
-            <Card>
+            
+            <TabsContent value="import" className="mt-6">
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
               {!importedAccount ? (
                 <form onSubmit={handleImportSubmit}>
-                    <CardHeader>
-                        <CardTitle>Import an Existing Stellar Account</CardTitle>
-                        <CardDescription>
+                    <CardHeader className="pb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                          <Upload className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Import an Existing Stellar Account</CardTitle>
+                          <CardDescription className="text-base text-gray-600 dark:text-gray-400">
                         Enter your secret key to import an existing account. This will replace your current session's wallet.
                         </CardDescription>
+                        </div>
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
-                            <Label htmlFor="secretKey">Secret Key</Label>
+                        <Label htmlFor="secretKey" className="text-sm font-medium text-gray-700 dark:text-gray-300">Secret Key</Label>
                             <Textarea 
                                 id="secretKey"
                                 placeholder="Starts with 'S'..."
                                 value={importKey}
                                 onChange={(e) => setImportKey(e.target.value)}
                                 required
+                          className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                             />
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button type="submit">Import Account</Button>
+                      <Button 
+                        type="submit"
+                        className="h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group"
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        <span>Import Account</span>
+                      </Button>
                     </CardFooter>
                 </form>
               ) : (
                 <>
-                  <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
+                    <CardHeader className="pb-6">
+                      <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
                         <CheckCircle className="h-6 w-6 text-green-500" />
                         Account Imported Successfully
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="text-base text-gray-600 dark:text-gray-400">
                         This account is now active in your session. You can view it on the "Export Account" tab.
                       </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                       <div>
-                          <Label htmlFor="importedPublicKey">Imported Public Key</Label>
+                        <Label htmlFor="importedPublicKey" className="text-sm font-medium text-gray-700 dark:text-gray-300">Imported Public Key</Label>
                            <div className="relative">
-                              <Input id="importedPublicKey" readOnly value={importedAccount.publicKey} className="pr-10" />
+                          <Input 
+                            id="importedPublicKey" 
+                            readOnly 
+                            value={importedAccount.publicKey} 
+                            className="pr-10 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70" 
+                          />
                               <Button 
                                   type="button" 
                                   size="icon" 
                                   variant="ghost" 
-                                  className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+                            className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700"
                                   onClick={() => handleCopy(importedAccount.publicKey, 'Public Key')}
                               >
                                   <Copy className="h-4 w-4" />
@@ -369,14 +503,25 @@ export default function AccountPage() {
                           </div>
                       </div>
                       <div>
-                          <Label htmlFor="importedSecretKey">Imported Secret Key</Label>
+                        <Label htmlFor="importedSecretKey" className="text-sm font-medium text-gray-700 dark:text-gray-300">Imported Secret Key</Label>
                            <div className="relative">
-                              <Input id="importedSecretKey" readOnly value={"S" + "•".repeat(55)} type="password" className="pr-10" />
+                          <Input 
+                            id="importedSecretKey" 
+                            readOnly 
+                            value={"S" + "•".repeat(55)} 
+                            type="password" 
+                            className="pr-10 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300/70 dark:border-gray-600/70" 
+                          />
                           </div>
                       </div>
                   </CardContent>
                   <CardFooter>
-                      <Button variant="outline" onClick={() => setImportedAccount(null)}>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setImportedAccount(null)}
+                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
                           Import Another Account
                       </Button>
                   </CardFooter>
@@ -385,6 +530,8 @@ export default function AccountPage() {
             </Card>
         </TabsContent>
       </Tabs>
+        </div>
+      </div>
     </div>
   )
 }
