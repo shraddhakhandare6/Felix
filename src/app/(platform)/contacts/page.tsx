@@ -50,6 +50,12 @@ export default function ContactsPage() {
 
   const [initialAddress, setInitialAddress] = useState('');
 
+  // Add pagination for contacts
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.ceil(contacts.length / pageSize);
+  const paginatedContacts = contacts.slice((page - 1) * pageSize, page * pageSize);
+
   useEffect(() => {
     // Trigger entrance animation
     const timer = setTimeout(() => setIsVisible(true), 100);
@@ -177,7 +183,7 @@ export default function ContactsPage() {
                   </TableHeader>
                   <TableBody>
                     {contacts.length > 0 ? (
-                      contacts.map((contact, index) => (
+                      paginatedContacts.map((contact, index) => (
                         <TableRow 
                           key={contact.id}
                           className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/10 dark:hover:to-purple-900/10 transition-all duration-200"
@@ -261,6 +267,33 @@ export default function ContactsPage() {
         </Card>
         </div>
       </div>
+
+      {/* Pagination Controls */}
+      {contacts.length > pageSize && (
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-sm text-gray-600 dark:text-gray-400">Page {page} of {totalPages}</span>
+          <div className="space-x-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-800 hover:text-white hover:border-blue-800 dark:hover:bg-green-900 dark:hover:text-green-300 dark:hover:border-green-400 transition-colors duration-200"
+            >
+              Previous
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-800 hover:text-white hover:border-blue-800 dark:hover:bg-green-900 dark:hover:text-green-300 dark:hover:border-green-400 transition-colors duration-200"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       <AddContactDialog 
         open={isAddContactOpen} 

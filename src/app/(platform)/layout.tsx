@@ -45,9 +45,18 @@ export default function PlatformLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-      <header className="flex items-center justify-between p-4 border-b bg-card">
+      <div className="flex min-h-screen w-full">
+        {/* Fixed Sidebar */}
+        <div className="fixed left-0 top-0 h-full z-30" style={{ width: '270px' }}>
+          <AppSidebar />
+        </div>
+        {/* Main Content Area */}
+        <div className="flex-1 ml-[270px] flex flex-col min-h-screen">
+          <SidebarInset>
+            <header className="flex items-center justify-between p-4 md:rounded-2xl md:mx-4 mt-4 shadow-lg bg-gradient-to-r from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-0 transition-all duration-500 relative overflow-hidden z-20">
+        {/* Floating accent */}
+        <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-20 animate-bounce pointer-events-none"></div>
+        <div className="absolute top-1/2 left-0 w-3 h-3 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full opacity-15 animate-pulse pointer-events-none"></div>
           <SidebarTrigger />
           <div className="flex items-center gap-2 sm:gap-4">
             <form className="hidden sm:flex items-center gap-2" onSubmit={handleSearch}>
@@ -57,7 +66,7 @@ export default function PlatformLayout({
                   name="search"
                   type="search"
                   placeholder="Search..."
-                  className="pl-8 w-[200px] lg:w-[300px] bg-background"
+                  className="pl-8 w-[200px] lg:w-[300px] bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 rounded-lg"
                 />
               </div>
               <Button type="submit" size="sm">Search</Button>
@@ -80,7 +89,7 @@ export default function PlatformLayout({
                         name="search"
                         type="search"
                         placeholder="Search..."
-                        className="w-full bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                        className="w-full bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 rounded-lg"
                         autoFocus
                     />
                     <Button type="submit">Search</Button>
@@ -90,8 +99,8 @@ export default function PlatformLayout({
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Bell className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="bg-green-500 hover:bg-green-600 text-white transition-colors duration-200">
+                  <Bell className="h-5 w-5 text-white" />
                   <span className="sr-only">Notifications</span>
                 </Button>
               </PopoverTrigger>
@@ -111,7 +120,9 @@ export default function PlatformLayout({
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background/95">
           {children}
         </main>
-      </SidebarInset>
+          </SidebarInset>
+        </div>
+      </div>
     </SidebarProvider>
   );
 }

@@ -36,11 +36,23 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        // Modern floating card design:
+        "backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-6 transition-all duration-300 animate-fade-in w-full max-w-lg",
+        // Centered and animated
+        "fixed left-1/2 top-1/2 z-50 grid translate-x-[-50%] translate-y-[-50%] gap-4",
+        // Responsive
+        "sm:max-w-lg",
         className
       )}
       {...props}
     />
+    <style jsx>{`
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(16px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .animate-fade-in { animation: fade-in 0.5s cubic-bezier(0.4,0,0.2,1); }
+    `}</style>
   </AlertDialogPortal>
 ))
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName

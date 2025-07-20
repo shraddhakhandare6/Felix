@@ -291,10 +291,10 @@ export default function AccountPage() {
                     />
                       <Button 
                         type="submit"
-                        className="h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group"
+                        className="h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group text-white hover:text-blue-200 focus-visible:outline-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        <span>Save Changes</span>
+                        <span className="transition-colors duration-200 group-hover:text-blue-500">Save Changes</span>
                       </Button>
                   </form>
                 </Form>
@@ -343,11 +343,11 @@ export default function AccountPage() {
                                         type="button" 
                                         size="icon" 
                                         variant="ghost" 
-                              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group"
                                         onClick={() => handleCopy(exportAccount.publicKey, "Public Key")}
                                         disabled={isExportLoading}
                                     >
-                                        <Copy className="h-4 w-4" />
+                                        <Copy className="h-4 w-4 transition-colors duration-200 group-hover:text-green-600" />
                                         <span className="sr-only">Copy Public Key</span>
                                     </Button>
                                 </div>
@@ -361,10 +361,13 @@ export default function AccountPage() {
                               size="sm" 
                               onClick={() => setShowSecretKey(!showSecretKey)} 
                               disabled={isExportLoading}
-                              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                              className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group"
                             >
-                              {showSecretKey ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
-                                        {showSecretKey ? "Hide" : "Show"}
+                              {showSecretKey ? 
+                                <EyeOff className="w-3 h-3 mr-1 transition-colors duration-200 group-hover:text-blue-600 dark:group-hover:text-blue-400" /> : 
+                                <Eye className="w-3 h-3 mr-1 transition-colors duration-200 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                              }
+                              <span className="transition-colors duration-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">{showSecretKey ? "Hide" : "Show"}</span>
                                     </Button>
                                 </div>
                                 <div className="relative">
@@ -379,11 +382,11 @@ export default function AccountPage() {
                                         type="button" 
                                         size="icon" 
                                         variant="ghost" 
-                              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group"
                                         onClick={() => handleCopy(exportAccount.secretKey, "Secret Key")}
                                         disabled={isExportLoading}
                                     >
-                                        <Copy className="h-4 w-4" />
+                                        <Copy className="h-4 w-4 transition-colors duration-200 group-hover:text-green-600" />
                                         <span className="sr-only">Copy Secret Key</span>
                                     </Button>
                                 </div>
@@ -420,10 +423,10 @@ export default function AccountPage() {
                     variant="outline" 
                     onClick={handleDownloadBackup} 
                     disabled={isExportLoading || !exportAccount}
-                    className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                    className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors duration-200 group"
                   >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Backup
+                    <Download className="mr-2 h-4 w-4 transition-colors duration-200 group-hover:text-blue-700 dark:group-hover:text-blue-400" />
+                    <span className="transition-colors duration-200 group-hover:text-blue-700 dark:group-hover:text-blue-400">Download Backup</span>
                   </Button>
                 </CardFooter>
             </Card>
@@ -462,10 +465,10 @@ export default function AccountPage() {
                     <CardFooter>
                       <Button 
                         type="submit"
-                        className="h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group"
+                        className="h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group text-white hover:text-blue-200 focus-visible:outline-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500"
                       >
                         <Upload className="mr-2 h-4 w-4" />
-                        <span>Import Account</span>
+                        <span className="transition-colors duration-200 group-hover:text-blue-500">Import Account</span>
                       </Button>
                     </CardFooter>
                 </form>
@@ -494,10 +497,10 @@ export default function AccountPage() {
                                   type="button" 
                                   size="icon" 
                                   variant="ghost" 
-                            className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 group"
                                   onClick={() => handleCopy(importedAccount.publicKey, 'Public Key')}
                               >
-                                  <Copy className="h-4 w-4" />
+                                  <Copy className="h-4 w-4 transition-colors duration-200 group-hover:text-green-600" />
                                   <span className="sr-only">Copy Public Key</span>
                               </Button>
                           </div>
@@ -519,10 +522,10 @@ export default function AccountPage() {
                       <Button 
                         variant="outline" 
                         onClick={() => setImportedAccount(null)}
-                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+                        className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 group"
                       >
-                        <Upload className="mr-2 h-4 w-4" />
-                          Import Another Account
+                        <Upload className="mr-2 h-4 w-4 transition-colors duration-200 group-hover:text-blue-600" />
+                          <span className="transition-colors duration-200 group-hover:text-blue-600">Import Another Account</span>
                       </Button>
                   </CardFooter>
                 </>

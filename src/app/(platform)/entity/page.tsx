@@ -346,13 +346,13 @@ function EntityManagementComponent() {
               </div>
         </div>
         {selectedEntityName && (
-              <Button 
-                variant="outline" 
-                onClick={handleChangeEntity}
-                className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Change Entity
+  <Button 
+    variant="outline" 
+    onClick={handleChangeEntity}
+    className="bg-transparent border border-blue-600 text-blue-700 font-semibold shadow-lg transition-colors duration-200 group hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-800 hover:text-white hover:font-bold"
+  >
+    <ChevronLeft className="mr-2 h-4 w-4 group-hover:text-white transition-colors duration-200" />
+    <span className="transition-colors duration-200 group-hover:text-white group-hover:font-bold">Change Entity</span>
             </Button>
         )}
       </div>

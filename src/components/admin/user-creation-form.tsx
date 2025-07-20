@@ -122,16 +122,19 @@ export function UserCreationForm({ onSuccess }: UserCreationFormProps) {
   }
 
   return (
+    <div className="max-w-lg w-full mx-auto p-0">
+      <div className="backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-2xl p-6 transition-all duration-300 animate-fade-in">
+        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100 text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Create User</h2>
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="firstName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>First Name</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">First Name</FormLabel>
               <FormControl>
-                <Input placeholder="John" {...field} />
+                    <Input placeholder="John" {...field} className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -142,9 +145,9 @@ export function UserCreationForm({ onSuccess }: UserCreationFormProps) {
           name="lastName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Last Name</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</FormLabel>
               <FormControl>
-                <Input placeholder="Doe" {...field} />
+                    <Input placeholder="Doe" {...field} className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -155,9 +158,9 @@ export function UserCreationForm({ onSuccess }: UserCreationFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="john.doe@example.com" {...field} />
+                    <Input type="email" placeholder="john.doe@example.com" {...field} className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -168,10 +171,10 @@ export function UserCreationForm({ onSuccess }: UserCreationFormProps) {
           name="group"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Group</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">Group</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                      <SelectTrigger className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-300/70 dark:border-gray-600/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
                     <SelectValue placeholder="Select a group" />
                   </SelectTrigger>
                 </FormControl>
@@ -183,8 +186,19 @@ export function UserCreationForm({ onSuccess }: UserCreationFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">Create User</Button>
+            <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] group text-white focus-visible:outline-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500">
+              Create User
+            </Button>
       </form>
     </Form>
+      </div>
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(16px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-fade-in { animation: fade-in 0.5s cubic-bezier(0.4,0,0.2,1); }
+      `}</style>
+    </div>
   );
 }
